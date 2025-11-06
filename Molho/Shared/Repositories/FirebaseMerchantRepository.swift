@@ -173,7 +173,7 @@ final class FirebaseMerchantRepository: MerchantRepository {
                 addressText: processedData["addressText"] as? String,
                 latitude: latitude,
                 longitude: longitude,
-                openingHours: decodeOpeningHours(from: data["openingHours"]),
+                openingHours: decodeOpeningHours(from: data["openingHours"]), // Usar data original, não processedData
                 isOpen: processedData["isOpen"] as? Bool,
                 createdAt: decodeDateFromProcessed(processedData["createdAt"]),
                 updatedAt: decodeDateFromProcessed(processedData["updatedAt"])
