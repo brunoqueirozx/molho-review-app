@@ -93,29 +93,71 @@ struct SearchView: View {
                     
                     // Lista de resultados
                     VStack(spacing: Theme.spacing32) {
-                        ForEach(viewModel.displayedResults) { merchant in
-                            MerchantListItem(merchant: merchant)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedMerchant = merchant
-                                    showMerchantSheet = true
+                        if viewModel.isLoading && viewModel.displayedResults.isEmpty {
+                            // Indicador de loading
+                            VStack(spacing: Theme.spacing16) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                Text("Carregando estabelecimentos...")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Theme.textNeutral)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Theme.spacing32)
+                        } else if let errorMessage = viewModel.errorMessage {
+                            // Mensagem de erro
+                            VStack(spacing: Theme.spacing16) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(.red)
+                                Text(errorMessage)
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Theme.textNeutral)
+                                Button("Tentar novamente") {
+                                    viewModel.loadAllMerchants()
                                 }
-                        }
-                        
-                        // Botão "Ver mais" quando houver mais de 10 resultados
-                        if viewModel.hasMoreResults {
-                            Button(action: {
-                                viewModel.loadMore()
-                            }) {
-                                HStack {
-                                    Text("Ver mais")
-                                        .font(.system(size: 16, weight: .semibold))
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 14))
+                                .buttonStyle(.borderedProminent)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Theme.spacing32)
+                        } else if viewModel.displayedResults.isEmpty {
+                            // Lista vazia
+                            VStack(spacing: Theme.spacing16) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(Theme.textNeutral)
+                                Text("Nenhum estabelecimento encontrado")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Theme.textNeutral)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Theme.spacing32)
+                        } else {
+                            // Lista de merchants
+                            ForEach(viewModel.displayedResults) { merchant in
+                                MerchantListItem(merchant: merchant)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedMerchant = merchant
+                                        showMerchantSheet = true
+                                    }
+                            }
+                            
+                            // Botão "Ver mais" quando houver mais de 10 resultados
+                            if viewModel.hasMoreResults {
+                                Button(action: {
+                                    viewModel.loadMore()
+                                }) {
+                                    HStack {
+                                        Text("Ver mais")
+                                            .font(.system(size: 16, weight: .semibold))
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 14))
+                                    }
+                                    .foregroundStyle(Theme.primaryGreen)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, Theme.spacing16)
                                 }
-                                .foregroundStyle(Theme.primaryGreen)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, Theme.spacing16)
                             }
                         }
                     }

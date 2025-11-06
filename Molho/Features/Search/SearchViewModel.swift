@@ -19,12 +19,15 @@ enum SearchScope: String, CaseIterable {
     }
 }
 
+@MainActor
 final class SearchViewModel: ObservableObject {
     @Published var query: String = ""
     @Published var displayedResults: [Merchant] = []
     @Published var allResults: [Merchant] = []
     @Published var selectedFilter: SearchScope = .all
     @Published var showingAll: Bool = false
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
     
     private let repository: MerchantRepository
     private let maxInitialResults = 10
@@ -35,27 +38,61 @@ final class SearchViewModel: ObservableObject {
         #else
         self.repository = repository ?? MerchantRepositoryStub()
         #endif
-        loadAllMerchants()
     }
 
     func loadAllMerchants() {
-        // Futuramente chamará Firestore via repository
-        // Por enquanto, carrega todos os merchants disponíveis
-        allResults = repository.searchMerchants(query: "")
-        updateDisplayedResults()
+        isLoading = true
+        errorMessage = nil
+        
+        Task { @MainActor in
+            do {
+                #if canImport(FirebaseFirestore)
+                if let firebaseRepo = repository as? FirebaseMerchantRepository {
+                    let merchants = try await firebaseRepo.searchMerchantsAsync(query: "")
+                    self.allResults = merchants
+                } else {
+                    self.allResults = repository.searchMerchants(query: "")
+                }
+                #else
+                self.allResults = repository.searchMerchants(query: "")
+                #endif
+                
+                updateDisplayedResults()
+                isLoading = false
+            } catch {
+                print("❌ Erro ao carregar merchants: \(error)")
+                errorMessage = "Erro ao carregar estabelecimentos"
+                isLoading = false
+            }
+        }
     }
     
     func search() {
-        // Futuramente chamará Firestore via repository
-        if query.isEmpty {
-            // Se a query estiver vazia, mostra todos os merchants
-            allResults = repository.searchMerchants(query: "")
-        } else {
-            // Se houver query, filtra os resultados
-            allResults = repository.searchMerchants(query: query)
+        isLoading = true
+        errorMessage = nil
+        
+        Task { @MainActor in
+            do {
+                #if canImport(FirebaseFirestore)
+                if let firebaseRepo = repository as? FirebaseMerchantRepository {
+                    let merchants = try await firebaseRepo.searchMerchantsAsync(query: query)
+                    self.allResults = merchants
+                } else {
+                    self.allResults = repository.searchMerchants(query: query)
+                }
+                #else
+                self.allResults = repository.searchMerchants(query: query)
+                #endif
+                
+                showingAll = false
+                updateDisplayedResults()
+                isLoading = false
+            } catch {
+                print("❌ Erro ao buscar merchants: \(error)")
+                errorMessage = "Erro ao buscar estabelecimentos"
+                isLoading = false
+            }
         }
-        showingAll = false
-        updateDisplayedResults()
     }
     
     func loadMore() {

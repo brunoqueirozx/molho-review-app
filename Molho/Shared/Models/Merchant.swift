@@ -57,6 +57,30 @@ struct Merchant: Identifiable, Codable {
     var createdAt: Date?
     var updatedAt: Date?
     
+    // Inicializador padrão para facilitar a decodificação
+    init(id: String = "", name: String, headerImageUrl: String? = nil, carouselImages: [String]? = nil, galleryImages: [String]? = nil, categories: [String]? = nil, style: String? = nil, criticRating: Double? = nil, publicRating: Double? = nil, likesCount: Int? = nil, bookmarksCount: Int? = nil, viewsCount: Int? = nil, description: String? = nil, addressText: String? = nil, latitude: Double = 0.0, longitude: Double = 0.0, openingHours: OpeningHours? = nil, isOpen: Bool? = nil, createdAt: Date? = nil, updatedAt: Date? = nil) {
+        self.id = id
+        self.name = name
+        self.headerImageUrl = headerImageUrl
+        self.carouselImages = carouselImages
+        self.galleryImages = galleryImages
+        self.categories = categories
+        self.style = style
+        self.criticRating = criticRating
+        self.publicRating = publicRating
+        self.likesCount = likesCount
+        self.bookmarksCount = bookmarksCount
+        self.viewsCount = viewsCount
+        self.description = description
+        self.addressText = addressText
+        self.latitude = latitude
+        self.longitude = longitude
+        self.openingHours = openingHours
+        self.isOpen = isOpen
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+    
     // Compatibilidade com código antigo
     var category: String? {
         get { categories?.first }

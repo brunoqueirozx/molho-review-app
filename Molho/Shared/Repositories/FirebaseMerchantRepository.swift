@@ -33,10 +33,14 @@ final class FirebaseMerchantRepository: MerchantRepository {
                 return
             }
             
+            print("📦 Documentos encontrados: \(documents.count)")
+            
             // Decodifica todos os merchants
             let allMerchants = documents.compactMap { doc in
                 self.decodeMerchant(from: doc)
             }
+            
+            print("✅ Merchants decodificados: \(allMerchants.count)")
             
             // Se houver query, filtra localmente
             if query.isEmpty {
@@ -51,6 +55,38 @@ final class FirebaseMerchantRepository: MerchantRepository {
         
         semaphore.wait()
         return results
+    }
+    
+    // Versão async/await para melhor performance
+    @available(iOS 15.0, *)
+    func searchMerchantsAsync(query: String) async throws -> [Merchant] {
+        print("🔍 Buscando merchants no Firestore...")
+        
+        let snapshot = try await db.collection(collectionName).getDocuments()
+        
+        guard !snapshot.documents.isEmpty else {
+            print("⚠️ Nenhum documento encontrado na coleção '\(collectionName)'")
+            return []
+        }
+        
+        print("📦 Documentos encontrados: \(snapshot.documents.count)")
+        
+        // Decodifica todos os merchants
+        let allMerchants = snapshot.documents.compactMap { doc in
+            self.decodeMerchant(from: doc)
+        }
+        
+        print("✅ Merchants decodificados: \(allMerchants.count)")
+        
+        // Se houver query, filtra localmente
+        if query.isEmpty {
+            return allMerchants
+        } else {
+            let queryLower = query.lowercased()
+            return allMerchants.filter { merchant in
+                merchant.name.lowercased().contains(queryLower)
+            }
+        }
     }
     
     func merchantById(id: String) -> Merchant? {
@@ -80,7 +116,10 @@ final class FirebaseMerchantRepository: MerchantRepository {
     // MARK: - Métodos auxiliares
     
     private func decodeMerchant(from document: DocumentSnapshot) -> Merchant? {
-        guard let data = document.data() else { return nil }
+        guard let data = document.data() else {
+            print("⚠️ Documento \(document.documentID) não tem dados")
+            return nil
+        }
         
         do {
             // Converter tipos do Firestore para tipos compatíveis com JSON
@@ -90,9 +129,20 @@ final class FirebaseMerchantRepository: MerchantRepository {
                 // Converter Timestamp para Date (e depois para timestamp Unix)
                 if let timestamp = value as? Timestamp {
                     processedData[key] = timestamp.dateValue().timeIntervalSince1970
+                } else if let geoPoint = value as? GeoPoint {
+                    // GeoPoint não é usado no modelo atual, mas pode ser necessário no futuro
+                    continue
                 } else {
                     processedData[key] = value
                 }
+            }
+            
+            // Garantir que campos obrigatórios existam
+            guard let name = processedData["name"] as? String,
+                  let latitude = processedData["latitude"] as? Double,
+                  let longitude = processedData["longitude"] as? Double else {
+                print("⚠️ Documento \(document.documentID) está faltando campos obrigatórios")
+                return nil
             }
             
             let jsonData = try JSONSerialization.data(withJSONObject: processedData)
@@ -104,8 +154,9 @@ final class FirebaseMerchantRepository: MerchantRepository {
             return merchant
         } catch {
             print("❌ Erro ao decodificar merchant \(document.documentID): \(error)")
+            print("   Erro detalhado: \(error.localizedDescription)")
             if let data = document.data() {
-                print("   Dados recebidos: \(data.keys.joined(separator: ", "))")
+                print("   Campos disponíveis: \(data.keys.joined(separator: ", "))")
             }
             return nil
         }
