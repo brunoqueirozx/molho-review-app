@@ -1,0 +1,31 @@
+// Cole estas regras no Firebase Console > Firestore > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Coleção de merchants - leitura pública, escrita apenas para usuários autenticados
+    match /merchants/{merchantId} {
+      allow read: if true; // Qualquer um pode ler
+      allow create: if request.auth != null; // Apenas usuários autenticados podem criar
+      allow update: if request.auth != null; // Apenas usuários autenticados podem atualizar
+      allow delete: if request.auth != null; // Apenas usuários autenticados podem deletar
+      
+      // Validações
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.latitude is number
+                    && request.resource.data.longitude is number
+                    && (!('criticRating' in request.resource.data) || 
+                        (request.resource.data.criticRating >= 1.0 && 
+                         request.resource.data.criticRating <= 5.0))
+                    && (!('publicRating' in request.resource.data) || 
+                        (request.resource.data.publicRating >= 1.0 && 
+                         request.resource.data.publicRating <= 5.0))
+                    && (!('carouselImages' in request.resource.data) || 
+                        request.resource.data.carouselImages.size() <= 10)
+                    && (!('description' in request.resource.data) || 
+                        request.resource.data.description.size() <= 1000);
+    }
+  }
+}
+
