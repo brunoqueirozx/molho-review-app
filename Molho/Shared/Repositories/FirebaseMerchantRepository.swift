@@ -13,9 +13,9 @@ final class FirebaseMerchantRepository: MerchantRepository {
     
     func fetchMerchantsNear(latitude: Double, longitude: Double, radiusMeters: Double) -> [Merchant] {
         #if canImport(FirebaseFirestore)
-        // TODO: Implementar busca geográfica usando GeoFirestore ou similar
         // Por enquanto, retorna todos os merchants
-        return []
+        // TODO: Implementar busca geográfica usando GeoFirestore ou similar
+        return searchMerchants(query: "")
         #else
         return []
         #endif
@@ -27,29 +27,33 @@ final class FirebaseMerchantRepository: MerchantRepository {
         var results: [Merchant] = []
         let semaphore = DispatchSemaphore(value: 0)
         
-        var queryRef: Query = db.collection(collectionName)
-        
-        if !query.isEmpty {
-            // Busca por nome (case-insensitive)
-            queryRef = queryRef
-                .whereField("name", isGreaterThanOrEqualTo: query)
-                .whereField("name", isLessThanOrEqualTo: query + "\u{f8ff}")
-        }
-        
-        queryRef.getDocuments { snapshot, error in
+        // Busca todos os merchants do Firestore
+        db.collection(collectionName).getDocuments { snapshot, error in
             defer { semaphore.signal() }
             
             if let error = error {
-                print("Erro ao buscar merchants: \(error.localizedDescription)")
+                print("❌ Erro ao buscar merchants: \(error.localizedDescription)")
                 return
             }
             
             guard let documents = snapshot?.documents else {
+                print("⚠️ Nenhum documento encontrado")
                 return
             }
             
-            results = documents.compactMap { doc in
-                try? self.decodeMerchant(from: doc)
+            // Decodifica todos os merchants
+            let allMerchants = documents.compactMap { doc in
+                self.decodeMerchant(from: doc)
+            }
+            
+            // Se houver query, filtra localmente
+            if query.isEmpty {
+                results = allMerchants
+            } else {
+                let queryLower = query.lowercased()
+                results = allMerchants.filter { merchant in
+                    merchant.name.lowercased().contains(queryLower)
+                }
             }
         }
         
@@ -69,15 +73,16 @@ final class FirebaseMerchantRepository: MerchantRepository {
             defer { semaphore.signal() }
             
             if let error = error {
-                print("Erro ao buscar merchant: \(error.localizedDescription)")
+                print("❌ Erro ao buscar merchant: \(error.localizedDescription)")
                 return
             }
             
             guard let doc = snapshot, doc.exists else {
+                print("⚠️ Merchant com ID \(id) não encontrado")
                 return
             }
             
-            result = try? self.decodeMerchant(from: doc)
+            result = self.decodeMerchant(from: doc)
         }
         
         semaphore.wait()
@@ -90,18 +95,40 @@ final class FirebaseMerchantRepository: MerchantRepository {
     // MARK: - Métodos auxiliares
     
     #if canImport(FirebaseFirestore)
-    private func decodeMerchant(from document: DocumentSnapshot) throws -> Merchant? {
+    private func decodeMerchant(from document: DocumentSnapshot) -> Merchant? {
         guard let data = document.data() else { return nil }
         
-        var merchant = try Firestore.Decoder().decode(Merchant.self, from: data)
-        merchant.id = document.documentID
-        return merchant
+        do {
+            // Converter tipos do Firestore para tipos compatíveis com JSON
+            var processedData: [String: Any] = [:]
+            
+            for (key, value) in data {
+                // Converter Timestamp para Date (e depois para timestamp Unix)
+                if let timestamp = value as? Timestamp {
+                    processedData[key] = timestamp.dateValue().timeIntervalSince1970
+                } else {
+                    processedData[key] = value
+                }
+            }
+            
+            let jsonData = try JSONSerialization.data(withJSONObject: processedData)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .secondsSince1970
+            
+            var merchant = try decoder.decode(Merchant.self, from: jsonData)
+            merchant.id = document.documentID
+            return merchant
+        } catch {
+            print("❌ Erro ao decodificar merchant \(document.documentID): \(error)")
+            if let data = document.data() {
+                print("   Dados recebidos: \(data.keys.joined(separator: ", "))")
+            }
+            return nil
+        }
     }
     
-    private func decodeMerchant(from document: QueryDocumentSnapshot) throws -> Merchant? {
-        var merchant = try Firestore.Decoder().decode(Merchant.self, from: document.data())
-        merchant.id = document.documentID
-        return merchant
+    private func decodeMerchant(from document: QueryDocumentSnapshot) -> Merchant? {
+        return decodeMerchant(from: document as DocumentSnapshot)
     }
     #endif
     

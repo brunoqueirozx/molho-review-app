@@ -8,7 +8,7 @@ final class HomeViewModel: ObservableObject {
 
     @Published var merchants: [Merchant] = []
 
-    init(repository: MerchantRepository = MerchantRepositoryStub()) {
+    init(repository: MerchantRepository = FirebaseMerchantRepository()) {
         self.repository = repository
         Task { @MainActor in
             loadNearby()

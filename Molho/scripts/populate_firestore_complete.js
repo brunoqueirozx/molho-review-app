@@ -358,6 +358,9 @@ async function populateFirestore() {
   console.log('🚀 Iniciando população do Firestore...\n');
   
   try {
+    // Testar conexão com Firestore primeiro
+    console.log('🔍 Verificando conexão com Firestore...');
+    
     // Verificar se já existem merchants
     const existingDocs = await db.collection('merchants').limit(1).get();
     if (!existingDocs.empty) {
@@ -387,6 +390,15 @@ async function populateFirestore() {
     
   } catch (error) {
     console.error('\n❌ Erro ao popular Firestore:', error);
+    
+    if (error.code === 5 || error.message.includes('NOT_FOUND')) {
+      console.error('\n💡 SOLUÇÃO:');
+      console.error('   O Firestore Database não foi criado no seu projeto Firebase.');
+      console.error('   Siga os passos em: scripts/ATIVAR_FIRESTORE.md');
+      console.error('   Ou acesse: https://console.firebase.google.com/project/molho-review-app/firestore');
+      console.error('   Clique em "Criar banco de dados" e escolha "Modo de teste"');
+    }
+    
     throw error;
   }
 }
