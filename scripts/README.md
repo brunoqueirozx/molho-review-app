@@ -1,39 +1,36 @@
-# Scripts para Popular Firebase
+# Scripts do Projeto Molho
 
-Esta pasta contém scripts para popular o Firestore com dados de exemplo.
+Esta pasta contém scripts para popular e gerenciar o Firebase Firestore.
 
-## 📋 Arquivos
+## Localização
 
-- `populate_firestore_complete.js` - Script Node.js completo com todos os 12 merchants
-- `firestore_rules.txt` - Regras de segurança do Firestore
-- `QUICK_START.md` - Guia rápido passo a passo
-- `POPULATE_FIREBASE.md` - Guia detalhado
-- `PopulateFirestore.swift` - Função Swift alternativa (para usar no app)
+A pasta `scripts/` foi movida para fora do projeto iOS (`Molho/`) para evitar que arquivos de desenvolvimento sejam incluídos no bundle do app.
 
-## 🚀 Método Recomendado: Node.js
+## Como Usar
 
-### Pré-requisitos
-1. Node.js instalado (`brew install node`)
-2. Service Account Key do Firebase
+### Popular Firestore
 
-### Passos
-1. Baixe o `serviceAccountKey.json` do Firebase Console
-2. Coloque em `scripts/serviceAccountKey.json`
-3. Execute:
 ```bash
-cd scripts
+cd /Users/brunoq./Desktop/Molho/scripts
+bash run.sh
+```
+
+Ou manualmente:
+
+```bash
+cd /Users/brunoq./Desktop/Molho/scripts
 npm install firebase-admin
 node populate_firestore_complete.js
 ```
 
-Veja `QUICK_START.md` para instruções detalhadas.
+## Arquivos
 
-## 🔐 Segurança
+- `populate_firestore_complete.js` - Script principal para popular o Firestore
+- `run.sh` - Script helper para executar o populate
+- `serviceAccountKey.json` - Credenciais do Firebase (não commitado)
+- `package.json` - Dependências Node.js
+- `*.md` - Documentação
 
-⚠️ **IMPORTANTE**: O arquivo `serviceAccountKey.json` está no `.gitignore` e **NÃO** deve ser commitado no Git!
+## Nota
 
-## 📚 Documentação
-
-- `FIREBASE_SETUP.md` - Estrutura completa dos dados
-- `FIREBASE_MIGRATION.md` - Como migrar do stub para Firebase
-
+Esta pasta não está mais dentro do projeto Xcode, então os arquivos não serão incluídos no bundle do app iOS.
