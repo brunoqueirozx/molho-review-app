@@ -156,7 +156,7 @@ final class FirebaseMerchantRepository: MerchantRepository {
             let longitude = processedData["longitude"] as? Double ?? 0.0
             
             // Criar merchant manualmente para garantir compatibilidade
-            var merchant = Merchant(
+            let merchant = Merchant(
                 id: document.documentID,
                 name: name,
                 headerImageUrl: processedData["headerImageUrl"] as? String,
@@ -173,10 +173,10 @@ final class FirebaseMerchantRepository: MerchantRepository {
                 addressText: processedData["addressText"] as? String,
                 latitude: latitude,
                 longitude: longitude,
-                openingHours: decodeOpeningHours(from: processedData["openingHours"]),
+                openingHours: decodeOpeningHours(from: data["openingHours"]),
                 isOpen: processedData["isOpen"] as? Bool,
-                createdAt: decodeDate(from: processedData["createdAt"]),
-                updatedAt: decodeDate(from: processedData["updatedAt"])
+                createdAt: decodeDateFromProcessed(processedData["createdAt"]),
+                updatedAt: decodeDateFromProcessed(processedData["updatedAt"])
             )
             
             return merchant
@@ -190,6 +190,20 @@ final class FirebaseMerchantRepository: MerchantRepository {
         }
     }
     
+    // Decodificar Date de um valor já processado (TimeInterval)
+    private func decodeDateFromProcessed(_ value: Any?) -> Date? {
+        guard let value = value else { return nil }
+        
+        if let interval = value as? TimeInterval {
+            return Date(timeIntervalSince1970: interval)
+        } else if let double = value as? Double {
+            return Date(timeIntervalSince1970: double)
+        }
+        
+        return nil
+    }
+    
+    // Decodificar Date diretamente do Firestore (Timestamp)
     private func decodeDate(from value: Any?) -> Date? {
         guard let value = value else { return nil }
         
@@ -205,6 +219,7 @@ final class FirebaseMerchantRepository: MerchantRepository {
     }
     
     private func decodeOpeningHours(from value: Any?) -> OpeningHours? {
+        // Pode vir como [String: Any] do Firestore ou já processado
         guard let dict = value as? [String: Any] else { return nil }
         
         // Decodificar cada dia, permitindo nil se não existir
