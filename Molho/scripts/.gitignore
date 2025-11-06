@@ -1,0 +1,7 @@
+# Node modules não devem ser commitados
+node_modules/
+package-lock.json
+
+# Service account key não deve ser commitado
+serviceAccountKey.json
+
