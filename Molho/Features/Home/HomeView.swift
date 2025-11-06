@@ -36,28 +36,11 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showMerchantSheet) {
-            MerchantSheetView(
-                merchant: viewModel.merchants.first ?? Merchant(
-                    id: "debug",
-                    name: "Guarita Bar",
-                    category: "Bar de drink",
-                    style: "Casual",
-                    rating: 3.6,
-                    reviewsCount: 3.2,
-                    viewsCount: 380,
-                    bookmarksCount: 350,
-                    description: "Bar aconchegante com drinks clássicos e autorais, petiscos e luz baixa. Perfeito para encontros e happy hour.",
-                    latitude: -23.56,
-                    longitude: -46.68,
-                    address: "R. Simão Álvares, 952 - Pinheiros, São Paulo - SP, 05417-020",
-                    openingHours: "Fecha 23:00",
-                    isOpen: true,
-                    imageUrl: nil,
-                    galleryImages: nil
-                )
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+            if let merchant = viewModel.merchants.first {
+                MerchantSheetView(merchant: merchant)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 }
