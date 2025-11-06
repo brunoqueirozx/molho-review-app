@@ -130,27 +130,55 @@ final class FirebaseMerchantRepository: MerchantRepository {
                 if let timestamp = value as? Timestamp {
                     processedData[key] = timestamp.dateValue().timeIntervalSince1970
                 } else if let geoPoint = value as? GeoPoint {
-                    // GeoPoint não é usado no modelo atual, mas pode ser necessário no futuro
+                    // GeoPoint não é usado no modelo atual
                     continue
+                } else if let array = value as? [Any] {
+                    // Processar arrays (pode conter Timestamps)
+                    processedData[key] = array.map { item in
+                        if let ts = item as? Timestamp {
+                            return ts.dateValue().timeIntervalSince1970
+                        }
+                        return item
+                    }
                 } else {
                     processedData[key] = value
                 }
             }
             
             // Garantir que campos obrigatórios existam
-            guard let name = processedData["name"] as? String,
-                  let latitude = processedData["latitude"] as? Double,
-                  let longitude = processedData["longitude"] as? Double else {
-                print("⚠️ Documento \(document.documentID) está faltando campos obrigatórios")
+            guard let name = processedData["name"] as? String else {
+                print("⚠️ Documento \(document.documentID) está faltando campo 'name'")
                 return nil
             }
             
-            let jsonData = try JSONSerialization.data(withJSONObject: processedData)
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .secondsSince1970
+            // Latitude e longitude podem ter valores padrão se não existirem
+            let latitude = processedData["latitude"] as? Double ?? 0.0
+            let longitude = processedData["longitude"] as? Double ?? 0.0
             
-            var merchant = try decoder.decode(Merchant.self, from: jsonData)
-            merchant.id = document.documentID
+            // Criar merchant manualmente para garantir compatibilidade
+            var merchant = Merchant(
+                id: document.documentID,
+                name: name,
+                headerImageUrl: processedData["headerImageUrl"] as? String,
+                carouselImages: processedData["carouselImages"] as? [String],
+                galleryImages: processedData["galleryImages"] as? [String],
+                categories: processedData["categories"] as? [String],
+                style: processedData["style"] as? String,
+                criticRating: processedData["criticRating"] as? Double,
+                publicRating: processedData["publicRating"] as? Double,
+                likesCount: processedData["likesCount"] as? Int,
+                bookmarksCount: processedData["bookmarksCount"] as? Int,
+                viewsCount: processedData["viewsCount"] as? Int,
+                description: processedData["description"] as? String,
+                addressText: processedData["addressText"] as? String,
+                latitude: latitude,
+                longitude: longitude,
+                openingHours: decodeOpeningHours(from: processedData["openingHours"]),
+                isOpen: processedData["isOpen"] as? Bool,
+                createdAt: decodeDate(from: processedData["createdAt"]),
+                updatedAt: decodeDate(from: processedData["updatedAt"])
+            )
+            
             return merchant
         } catch {
             print("❌ Erro ao decodificar merchant \(document.documentID): \(error)")
@@ -160,6 +188,46 @@ final class FirebaseMerchantRepository: MerchantRepository {
             }
             return nil
         }
+    }
+    
+    private func decodeDate(from value: Any?) -> Date? {
+        guard let value = value else { return nil }
+        
+        if let timestamp = value as? Timestamp {
+            return timestamp.dateValue()
+        } else if let interval = value as? TimeInterval {
+            return Date(timeIntervalSince1970: interval)
+        } else if let double = value as? Double {
+            return Date(timeIntervalSince1970: double)
+        }
+        
+        return nil
+    }
+    
+    private func decodeOpeningHours(from value: Any?) -> OpeningHours? {
+        guard let dict = value as? [String: Any] else { return nil }
+        
+        // Decodificar cada dia, permitindo nil se não existir
+        return OpeningHours(
+            monday: decodeDayHours(from: dict["monday"]),
+            tuesday: decodeDayHours(from: dict["tuesday"]),
+            wednesday: decodeDayHours(from: dict["wednesday"]),
+            thursday: decodeDayHours(from: dict["thursday"]),
+            friday: decodeDayHours(from: dict["friday"]),
+            saturday: decodeDayHours(from: dict["saturday"]),
+            sunday: decodeDayHours(from: dict["sunday"])
+        )
+    }
+    
+    private func decodeDayHours(from value: Any?) -> DayHours? {
+        guard let dict = value as? [String: Any],
+              let open = dict["open"] as? String,
+              let close = dict["close"] as? String,
+              let isClosed = dict["isClosed"] as? Bool else {
+            return nil
+        }
+        
+        return DayHours(open: open, close: close, isClosed: isClosed)
     }
     
     private func decodeMerchant(from document: QueryDocumentSnapshot) -> Merchant? {

@@ -1,66 +1,145 @@
-# Molho (iOS · SwiftUI · iOS 17+)
+# Molho - App iOS
 
-Arquitetura inicial com SwiftUI + MVVM leve, MapKit e integração preparada para Firebase (Auth + Firestore) via SPM.
+App iOS para descobrir e avaliar estabelecimentos gastronômicos, desenvolvido com SwiftUI e Firebase.
 
-## Estrutura
+## 🏗️ Estrutura do Projeto
 
-- `App/` → `MolhoApp.swift`, `AppDelegate.swift`
-- `Resources/` → `Assets.xcassets`, `GoogleService-Info.plist` (placeholder)
-- `Features/Home/` → `HomeView.swift`, `HomeViewModel.swift`, `TopBar.swift`, `BottomBar.swift`, `MapContainerView.swift`
-- `Features/Search/` → `SearchView.swift`, `SearchViewModel.swift`
-- `Features/Merchant/` → `MerchantSheetView.swift`, `MerchantViewModel.swift`
-- `Shared/Models/` → `Merchant.swift`
-- `Shared/Theme/` → `Theme.swift`
-- `Shared/Repositories/` → `MerchantRepository.swift` (protocolo + stub)
-
-## Requisitos
-- Xcode 15+ (iOS 17+)
-- SwiftUI, MapKit
-
-## Firebase via SPM
-1. No Xcode, Project > Package Dependencies > `+` e adicione `https://github.com/firebase/firebase-ios-sdk`.
-2. Selecione os produtos mínimos: `FirebaseAuth`, `FirebaseFirestore`, `FirebaseCore`.
-3. Em `Signing & Capabilities`, garanta que o app bundle está correto.
-
-> Observação: O código usa `#if canImport(FirebaseCore)` para compilar mesmo sem o pacote instalado. Quando o pacote for adicionado, `FirebaseApp.configure()` será chamado pelo `AppDelegate`.
-
-## GoogleService-Info.plist
-- Adicione seu arquivo real em `Resources/GoogleService-Info.plist`.
-- O projeto inclui um placeholder. Substitua-o pelo arquivo gerado no console do Firebase.
-
-## Região inicial do mapa
-- Ajuste em `Features/Home/HomeView.swift` a `MKCoordinateRegion` inicial (Pinheiros/SP por padrão `-23.56, -46.68`).
-
-## Abrir o Merchant Sheet
-- Na `Home`, toque no botão de debug (ícone `chevron.right` flutuante no mapa) para abrir o bottom sheet nativo (`.medium`, `.large`).
-
-## Firebase Firestore - Back-end
-
-O app está preparado para usar Firebase Firestore como back-end. Veja `FIREBASE_SETUP.md` para instruções detalhadas.
-
-### Estrutura de Dados
-- **Coleção**: `merchants`
-- **Modelo**: Veja `Shared/Models/Merchant.swift` para a estrutura completa
-- **Repositório**: `FirebaseMerchantRepository` implementa `MerchantRepository`
-
-### Para usar o Firebase:
-1. Adicione o Firebase SDK via SPM (FirebaseFirestore)
-2. Configure o `GoogleService-Info.plist`
-3. Configure as regras do Firestore (veja `scripts/firestore_rules.txt`)
-4. Substitua `MerchantRepositoryStub()` por `FirebaseMerchantRepository()` nos ViewModels
-
-### Exemplo de uso:
-```swift
-// No ViewModel
-let repository: MerchantRepository = FirebaseMerchantRepository()
-let merchants = repository.searchMerchants(query: "Bar")
+```
+Molho/
+├── App/
+│   ├── MolhoApp.swift          # Entry point do app
+│   └── AppDelegate.swift       # Configuração do Firebase
+├── Features/
+│   ├── Home/
+│   │   ├── HomeView.swift      # Tela principal com mapa
+│   │   ├── HomeViewModel.swift # ViewModel da Home
+│   │   ├── TopBar.swift        # Barra superior
+│   │   ├── BottomBar.swift     # Barra inferior (tabs)
+│   │   └── MapContainerView.swift # Container do mapa
+│   ├── Search/
+│   │   ├── SearchView.swift    # Tela de busca
+│   │   ├── SearchViewModel.swift # ViewModel da busca
+│   │   └── MerchantListItem.swift # Item da lista de resultados
+│   └── Merchant/
+│       ├── MerchantSheetView.swift # Bottom sheet do estabelecimento
+│       └── MerchantViewModel.swift # ViewModel do merchant
+├── Shared/
+│   ├── Models/
+│   │   └── Merchant.swift      # Modelo de dados do estabelecimento
+│   ├── Repositories/
+│   │   ├── MerchantRepository.swift # Protocolo do repositório
+│   │   ├── FirebaseMerchantRepository.swift # Implementação Firebase
+│   │   └── FirebaseMerchantRepositoryAsync.swift # Versão async
+│   └── Theme/
+│       └── Theme.swift         # Cores e espaçamentos
+├── Assets.xcassets/            # Imagens e assets
+└── GoogleService-Info.plist    # Configuração do Firebase
 ```
 
-## Critérios de aceite
-- Home exibe TopBar ("Molho", ícones `cart` e `plus`), mapa preenchendo a tela, BottomBar com 3 ícones.
-- Search acessível pela BottomBar (sem navegação complexa, apenas troca de conteúdo).
-- MerchantSheet abre com conteúdo completo conforme Figma.
-- Firebase preparado (imports e `FirebaseApp.configure()` condicionais).
-- Repositórios Firebase implementados e prontos para uso.
+## 🔥 Firebase Firestore
 
+O app está conectado ao Firebase Firestore e carrega os estabelecimentos da coleção `merchants`.
+
+### Estrutura de Dados
+
+Cada documento na coleção `merchants` contém:
+
+- `id`: String (ID do documento)
+- `name`: String (nome do estabelecimento)
+- `headerImageUrl`: String? (URL da imagem principal)
+- `carouselImages`: [String]? (até 10 imagens)
+- `galleryImages`: [String]? (galeria sem limite)
+- `categories`: [String]? (tags de categoria)
+- `style`: String? (ex: "Casual", "Elegante")
+- `criticRating`: Double? (1.0 a 5.0)
+- `publicRating`: Double? (1.0 a 5.0)
+- `likesCount`: Int?
+- `bookmarksCount`: Int?
+- `viewsCount`: Int?
+- `description`: String? (até 1000 caracteres)
+- `addressText`: String? (endereço completo)
+- `latitude`: Double
+- `longitude`: Double
+- `openingHours`: OpeningHours? (horário de funcionamento)
+- `isOpen`: Bool? (se está aberto agora)
+- `createdAt`: Date?
+- `updatedAt`: Date?
+
+## 🚀 Como Funciona
+
+### Tela de Busca
+
+1. Ao abrir a tela de busca, `SearchViewModel.loadAllMerchants()` é chamado
+2. O método busca todos os merchants da coleção `merchants` no Firestore
+3. Os dados são decodificados e exibidos na lista
+4. Durante o carregamento, um indicador de loading é exibido
+5. Em caso de erro, uma mensagem é exibida com opção de tentar novamente
+
+### Tela Home
+
+1. Ao abrir a Home, `HomeViewModel.loadNearby()` é chamado
+2. Carrega merchants próximos (atualmente todos os merchants)
+3. Exibe no mapa (funcionalidade futura)
+
+### Merchant Sheet
+
+1. Ao clicar em um merchant na lista de busca
+2. Abre um bottom sheet nativo com detalhes completos
+3. Mostra imagem, categorias, avaliações, horários, galeria, etc.
+
+## 📋 Requisitos
+
+- Xcode 15+ (iOS 17+)
+- SwiftUI
+- MapKit
+- Firebase SDK (FirebaseFirestore, FirebaseCore)
+
+## 🔧 Configuração
+
+### 1. Instalar Firebase SDK
+
+No Xcode:
+1. **File → Add Package Dependencies**
+2. Adicione: `https://github.com/firebase/firebase-ios-sdk`
+3. Selecione: `FirebaseFirestore`, `FirebaseCore`
+
+### 2. Configurar GoogleService-Info.plist
+
+O arquivo `GoogleService-Info.plist` já está configurado com as credenciais do projeto `molho-review-app`.
+
+### 3. Verificar Firestore
+
+Certifique-se de que:
+- O Firestore está ativado no Firebase Console
+- A coleção `merchants` existe e tem dados
+- As regras de segurança permitem leitura pública
+
+## 🧪 Testar
+
+1. Execute o app no simulador ou dispositivo
+2. Navegue para a tela de busca (ícone de busca no BottomBar)
+3. Você deve ver os merchants carregados do Firestore
+4. Clique em um merchant para ver os detalhes no bottom sheet
+
+## 📝 Logs de Debug
+
+O app imprime logs no console do Xcode:
+- `🔍 Buscando merchants no Firestore...`
+- `📦 Documentos encontrados: X`
+- `✅ Merchants decodificados: X`
+- `❌ Erro ao...` (em caso de erro)
+
+## 🎨 Design
+
+O app segue o design do Figma com:
+- Cores personalizadas (Theme.swift)
+- Espaçamentos consistentes
+- Tipografia do sistema
+- SF Symbols para ícones
+
+## 📦 Dependências
+
+- Firebase iOS SDK (via SPM)
+- SwiftUI (nativo)
+- MapKit (nativo)
 
