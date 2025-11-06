@@ -3,26 +3,18 @@ import Combine
 
 #if canImport(FirebaseFirestore)
 import FirebaseFirestore
-#endif
 
 final class FirebaseMerchantRepository: MerchantRepository {
-    #if canImport(FirebaseFirestore)
     private let db = Firestore.firestore()
     private let collectionName = "merchants"
-    #endif
     
     func fetchMerchantsNear(latitude: Double, longitude: Double, radiusMeters: Double) -> [Merchant] {
-        #if canImport(FirebaseFirestore)
         // Por enquanto, retorna todos os merchants
         // TODO: Implementar busca geográfica usando GeoFirestore ou similar
         return searchMerchants(query: "")
-        #else
-        return []
-        #endif
     }
     
     func searchMerchants(query: String) -> [Merchant] {
-        #if canImport(FirebaseFirestore)
         // Implementação síncrona temporária - idealmente deveria ser async
         var results: [Merchant] = []
         let semaphore = DispatchSemaphore(value: 0)
@@ -59,13 +51,9 @@ final class FirebaseMerchantRepository: MerchantRepository {
         
         semaphore.wait()
         return results
-        #else
-        return []
-        #endif
     }
     
     func merchantById(id: String) -> Merchant? {
-        #if canImport(FirebaseFirestore)
         var result: Merchant?
         let semaphore = DispatchSemaphore(value: 0)
         
@@ -87,14 +75,10 @@ final class FirebaseMerchantRepository: MerchantRepository {
         
         semaphore.wait()
         return result
-        #else
-        return nil
-        #endif
     }
     
     // MARK: - Métodos auxiliares
     
-    #if canImport(FirebaseFirestore)
     private func decodeMerchant(from document: DocumentSnapshot) -> Merchant? {
         guard let data = document.data() else { return nil }
         
@@ -130,28 +114,23 @@ final class FirebaseMerchantRepository: MerchantRepository {
     private func decodeMerchant(from document: QueryDocumentSnapshot) -> Merchant? {
         return decodeMerchant(from: document as DocumentSnapshot)
     }
-    #endif
     
     // MARK: - Métodos de escrita (para uso futuro)
     
     func createMerchant(_ merchant: Merchant) async throws {
-        #if canImport(FirebaseFirestore)
         let data = try Firestore.Encoder().encode(merchant)
         try await db.collection(collectionName).document(merchant.id).setData(data)
-        #endif
     }
     
     func updateMerchant(_ merchant: Merchant) async throws {
-        #if canImport(FirebaseFirestore)
         let data = try Firestore.Encoder().encode(merchant)
         try await db.collection(collectionName).document(merchant.id).updateData(data)
-        #endif
     }
     
     func deleteMerchant(id: String) async throws {
-        #if canImport(FirebaseFirestore)
         try await db.collection(collectionName).document(id).delete()
-        #endif
     }
 }
+
+#endif // canImport(FirebaseFirestore)
 

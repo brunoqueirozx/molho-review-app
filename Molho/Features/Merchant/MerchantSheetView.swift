@@ -229,7 +229,7 @@ struct MerchantSheetView: View {
                                         .frame(width: 6, height: 6)
                                     
                                     if let hours = viewModel.merchant.openingHours {
-                                        Text(hours)
+                                        Text(String(describing: hours))
                                             .font(.system(size: 17))
                                             .foregroundStyle(Color(hex: "#989898"))
                                             .tracking(-0.43)

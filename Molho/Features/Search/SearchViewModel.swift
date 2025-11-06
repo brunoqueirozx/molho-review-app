@@ -29,8 +29,12 @@ final class SearchViewModel: ObservableObject {
     private let repository: MerchantRepository
     private let maxInitialResults = 10
 
-    init(repository: MerchantRepository = FirebaseMerchantRepository()) {
-        self.repository = repository
+    init(repository: MerchantRepository? = nil) {
+        #if canImport(FirebaseFirestore)
+        self.repository = repository ?? FirebaseMerchantRepository()
+        #else
+        self.repository = repository ?? MerchantRepositoryStub()
+        #endif
         loadAllMerchants()
     }
 

@@ -8,8 +8,12 @@ final class HomeViewModel: ObservableObject {
 
     @Published var merchants: [Merchant] = []
 
-    init(repository: MerchantRepository = FirebaseMerchantRepository()) {
-        self.repository = repository
+    init(repository: MerchantRepository? = nil) {
+        #if canImport(FirebaseFirestore)
+        self.repository = repository ?? FirebaseMerchantRepository()
+        #else
+        self.repository = repository ?? MerchantRepositoryStub()
+        #endif
         Task { @MainActor in
             loadNearby()
         }
