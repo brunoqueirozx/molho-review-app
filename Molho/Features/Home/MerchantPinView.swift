@@ -26,37 +26,22 @@ struct MerchantPinView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 10) {
-                    Text(emoji)
-                        .font(.system(size: 24))
+            HStack(spacing: 8) {
+                Text(emoji)
+                    .font(.system(size: 24))
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(merchant.name)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Theme.textPrimary)
-                            .lineLimit(1)
-
-                        HStack(spacing: 6) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(Theme.accentGold)
-
-                            Text(criticRatingText)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Theme.textPrimary)
-                        }
-                    }
-                }
+                Text(criticRatingText)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(Color.white.opacity(0.96))
             .overlay {
-                RoundedRectangle(cornerRadius: Theme.corner12, style: .continuous)
+                RoundedRectangle(cornerRadius: 100, style: .continuous)
                     .stroke(Color.black.opacity(0.05))
             }
-            .clipShape(RoundedRectangle(cornerRadius: Theme.corner12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 100, style: .continuous))
             .shadow(color: Color.black.opacity(0.12), radius: 16, x: 0, y: 12)
 
             PinPointer()
