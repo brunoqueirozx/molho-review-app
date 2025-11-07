@@ -7,14 +7,24 @@ struct HomeView: View {
         center: CLLocationCoordinate2D(latitude: -23.56, longitude: -46.68),
         span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)
     )
-    @State private var showMerchantSheet: Bool = false
+    @State private var selectedMerchant: Merchant?
 
     @StateObject private var viewModel = HomeViewModel()
 
     var body: some View {
         ZStack {
             if selectedTab == .home {
-                MapContainerView(region: $region)
+                MapContainerView(
+                    region: $region,
+                    merchants: viewModel.merchants
+                ) { merchant in
+                    selectedMerchant = merchant
+                    if merchant.hasValidCoordinates {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            region.center = merchant.coordinate
+                        }
+                    }
+                }
             } else if selectedTab == .search {
                 SearchView()
             } else {
@@ -35,14 +45,17 @@ struct HomeView: View {
                 selectedTab = tab
             }
         }
-        .sheet(isPresented: $showMerchantSheet) {
-            if let merchant = viewModel.merchants.first {
-                MerchantSheetView(merchant: merchant)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+        .sheet(item: $selectedMerchant) { merchant in
+            MerchantSheetView(merchant: merchant)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: viewModel.merchants, initial: false) { oldValue, newValue in
+            guard let firstMerchant = newValue.first(where: { $0.hasValidCoordinates }) else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                region.center = firstMerchant.coordinate
             }
         }
     }
 }
-
 

@@ -121,73 +121,64 @@ final class FirebaseMerchantRepository: MerchantRepository {
             return nil
         }
         
-        do {
-            // Converter tipos do Firestore para tipos compatíveis com JSON
-            var processedData: [String: Any] = [:]
-            
-            for (key, value) in data {
-                // Converter Timestamp para Date (e depois para timestamp Unix)
-                if let timestamp = value as? Timestamp {
-                    processedData[key] = timestamp.dateValue().timeIntervalSince1970
-                } else if let geoPoint = value as? GeoPoint {
-                    // GeoPoint não é usado no modelo atual
-                    continue
-                } else if let array = value as? [Any] {
-                    // Processar arrays (pode conter Timestamps)
-                    processedData[key] = array.map { item in
-                        if let ts = item as? Timestamp {
-                            return ts.dateValue().timeIntervalSince1970
-                        }
-                        return item
+        // Converter tipos do Firestore para tipos compatíveis com JSON
+        var processedData: [String: Any] = [:]
+        
+        for (key, value) in data {
+            // Converter Timestamp para Date (e depois para timestamp Unix)
+            if let timestamp = value as? Timestamp {
+                processedData[key] = timestamp.dateValue().timeIntervalSince1970
+            } else if value is GeoPoint {
+                // GeoPoint não é usado no modelo atual
+                continue
+            } else if let array = value as? [Any] {
+                // Processar arrays (pode conter Timestamps)
+                processedData[key] = array.map { (item) -> Any in
+                    if let ts = item as? Timestamp {
+                        return ts.dateValue().timeIntervalSince1970 as Any
                     }
-                } else {
-                    processedData[key] = value
+                    return item
                 }
+            } else {
+                processedData[key] = value
             }
-            
-            // Garantir que campos obrigatórios existam
-            guard let name = processedData["name"] as? String else {
-                print("⚠️ Documento \(document.documentID) está faltando campo 'name'")
-                return nil
-            }
-            
-            // Latitude e longitude podem ter valores padrão se não existirem
-            let latitude = processedData["latitude"] as? Double ?? 0.0
-            let longitude = processedData["longitude"] as? Double ?? 0.0
-            
-            // Criar merchant manualmente para garantir compatibilidade
-            let merchant = Merchant(
-                id: document.documentID,
-                name: name,
-                headerImageUrl: processedData["headerImageUrl"] as? String,
-                carouselImages: processedData["carouselImages"] as? [String],
-                galleryImages: processedData["galleryImages"] as? [String],
-                categories: processedData["categories"] as? [String],
-                style: processedData["style"] as? String,
-                criticRating: processedData["criticRating"] as? Double,
-                publicRating: processedData["publicRating"] as? Double,
-                likesCount: processedData["likesCount"] as? Int,
-                bookmarksCount: processedData["bookmarksCount"] as? Int,
-                viewsCount: processedData["viewsCount"] as? Int,
-                description: processedData["description"] as? String,
-                addressText: processedData["addressText"] as? String,
-                latitude: latitude,
-                longitude: longitude,
-                openingHours: decodeOpeningHours(from: data["openingHours"]), // Usar data original, não processedData
-                isOpen: processedData["isOpen"] as? Bool,
-                createdAt: decodeDateFromProcessed(processedData["createdAt"]),
-                updatedAt: decodeDateFromProcessed(processedData["updatedAt"])
-            )
-            
-            return merchant
-        } catch {
-            print("❌ Erro ao decodificar merchant \(document.documentID): \(error)")
-            print("   Erro detalhado: \(error.localizedDescription)")
-            if let data = document.data() {
-                print("   Campos disponíveis: \(data.keys.joined(separator: ", "))")
-            }
+        }
+        
+        // Garantir que campos obrigatórios existam
+        guard let name = processedData["name"] as? String else {
+            print("⚠️ Documento \(document.documentID) está faltando campo 'name'")
             return nil
         }
+        
+        // Latitude e longitude podem ter valores padrão se não existirem
+        let latitude = processedData["latitude"] as? Double ?? 0.0
+        let longitude = processedData["longitude"] as? Double ?? 0.0
+        
+        // Criar merchant manualmente para garantir compatibilidade
+        let merchant = Merchant(
+            id: document.documentID,
+            name: name,
+            headerImageUrl: processedData["headerImageUrl"] as? String,
+            carouselImages: processedData["carouselImages"] as? [String],
+            galleryImages: processedData["galleryImages"] as? [String],
+            categories: processedData["categories"] as? [String],
+            style: processedData["style"] as? String,
+            criticRating: processedData["criticRating"] as? Double,
+            publicRating: processedData["publicRating"] as? Double,
+            likesCount: processedData["likesCount"] as? Int,
+            bookmarksCount: processedData["bookmarksCount"] as? Int,
+            viewsCount: processedData["viewsCount"] as? Int,
+            description: processedData["description"] as? String,
+            addressText: processedData["addressText"] as? String,
+            latitude: latitude,
+            longitude: longitude,
+            openingHours: decodeOpeningHours(from: data["openingHours"]), // Usar data original, não processedData
+            isOpen: processedData["isOpen"] as? Bool,
+            createdAt: decodeDateFromProcessed(processedData["createdAt"]),
+            updatedAt: decodeDateFromProcessed(processedData["updatedAt"])
+        )
+        
+        return merchant
     }
     
     // Decodificar Date de um valor já processado (TimeInterval)
@@ -267,4 +258,3 @@ final class FirebaseMerchantRepository: MerchantRepository {
 }
 
 #endif // canImport(FirebaseFirestore)
-

@@ -54,9 +54,24 @@
 		F2471E882EBCD42F00248DED /* MolhoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MolhoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F24742092EBE1C4800248DED /* Exceptions for "Molho" folder in "Molho" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				README.md,
+				REMOVER_README_DO_TARGET.md,
+				Shared/Repositories/README.md,
+			);
+			target = F2471E6B2EBCD42E00248DED /* Molho */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F2471E6E2EBCD42E00248DED /* Molho */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F24742092EBE1C4800248DED /* Exceptions for "Molho" folder in "Molho" target */,
+			);
 			path = Molho;
 			sourceTree = "<group>";
 		};

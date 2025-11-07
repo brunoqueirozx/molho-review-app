@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 // Horário de funcionamento para cada dia da semana
 struct OpeningHours: Codable {
@@ -105,5 +106,21 @@ struct Merchant: Identifiable, Codable {
     var imageUrl: String? {
         get { headerImageUrl }
         set { headerImageUrl = newValue }
+    }
+}
+
+extension Merchant {
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    var hasValidCoordinates: Bool {
+        abs(latitude) > .leastNonzeroMagnitude || abs(longitude) > .leastNonzeroMagnitude
+    }
+}
+
+extension Merchant: Equatable {
+    static func == (lhs: Merchant, rhs: Merchant) -> Bool {
+        lhs.id == rhs.id
     }
 }
