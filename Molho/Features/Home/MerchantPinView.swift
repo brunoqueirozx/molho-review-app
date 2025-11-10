@@ -4,23 +4,70 @@ struct MerchantPinView: View {
     let merchant: Merchant
 
     private var emoji: String {
+        // Prioridade 1: Emoji baseado no estilo
+        if let style = merchant.style?.lowercased() {
+            switch style {
+            case "calmo":
+                return "🧘"
+            case "romântico", "romantico":
+                return "💕"
+            case "elegante":
+                return "✨"
+            case "casual":
+                return "😊"
+            case "moderno":
+                return "🏙️"
+            case "rústico", "rustico":
+                return "🌾"
+            case "tropical":
+                return "🌴"
+            case "industrial":
+                return "🏭"
+            case "aconchegante":
+                return "🏠"
+            case "sofisticado":
+                return "🎩"
+            default:
+                break
+            }
+        }
+        
+        // Prioridade 2: Emoji baseado no tipo/categoria
         let normalizedCategories = merchant.categories?.map { $0.lowercased() } ?? []
-
-        let barKeywords = [
-            "bar", "boteco", "pub", "cervej", "drink", "coquetel"
-        ]
-
-        if normalizedCategories.contains(where: { category in
-            barKeywords.contains(where: { keyword in category.contains(keyword) })
-        }) {
+        
+        if normalizedCategories.contains(where: { $0.contains("bar") || $0.contains("pub") }) {
             return "🍸"
         }
+        if normalizedCategories.contains(where: { $0.contains("pizzaria") || $0.contains("pizza") }) {
+            return "🍕"
+        }
+        if normalizedCategories.contains(where: { $0.contains("café") || $0.contains("cafe") }) {
+            return "☕"
+        }
+        if normalizedCategories.contains(where: { $0.contains("padaria") }) {
+            return "🥖"
+        }
+        if normalizedCategories.contains(where: { $0.contains("fast food") }) {
+            return "🍔"
+        }
+        if normalizedCategories.contains(where: { $0.contains("food truck") }) {
+            return "🚚"
+        }
+        if normalizedCategories.contains(where: { $0.contains("bistrô") || $0.contains("bistro") }) {
+            return "🍷"
+        }
+        if normalizedCategories.contains(where: { $0.contains("vinícola") || $0.contains("vinicola") }) {
+            return "🍇"
+        }
 
+        // Padrão
         return "🍽️"
     }
 
     private var criticRatingText: String {
-        guard let rating = merchant.criticRating else { return "--" }
+        // Prioridade: nota do crítico, depois nota pública
+        let rating = merchant.criticRating ?? merchant.publicRating
+        guard let rating = rating else { return "--" }
         return String(format: "%.1f", rating)
     }
 

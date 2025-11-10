@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>molho.review.Molho</string>
+	<string>com.brunoqueiroz.molho</string>
 	<key>PROJECT_ID</key>
 	<string>molho-review-app</string>
 	<key>STORAGE_BUCKET</key>

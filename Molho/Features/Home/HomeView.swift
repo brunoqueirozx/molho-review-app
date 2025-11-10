@@ -8,6 +8,7 @@ struct HomeView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)
     )
     @State private var selectedMerchant: Merchant?
+    @State private var showingAddMerchant = false
 
     @StateObject private var viewModel = HomeViewModel()
 
@@ -36,7 +37,7 @@ struct HomeView: View {
             if selectedTab == .home {
                 TopBar(
                     onCartTapped: { print("Cart tapped") },
-                    onPlusTapped: { print("Plus tapped") }
+                    onPlusTapped: { showingAddMerchant = true }
                 )
             }
         }
@@ -50,10 +51,30 @@ struct HomeView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingAddMerchant) {
+            // Recarregar merchants quando o sheet for fechado
+            viewModel.loadNearby()
+        } content: {
+            AddMerchantView()
+        }
         .onChange(of: viewModel.merchants, initial: false) { oldValue, newValue in
-            guard let firstMerchant = newValue.first(where: { $0.hasValidCoordinates }) else { return }
-            withAnimation(.easeInOut(duration: 0.3)) {
-                region.center = firstMerchant.coordinate
+            // Se há novos merchants, centralizar no mais recente
+            if let newestMerchant = newValue.sorted(by: { 
+                ($0.createdAt ?? Date.distantPast) > ($1.createdAt ?? Date.distantPast)
+            }).first(where: { $0.hasValidCoordinates }) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    region.center = newestMerchant.coordinate
+                    // Dar zoom um pouco mais próximo para destacar
+                    region.span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                }
+                
+                // Após 2 segundos, voltar ao zoom normal
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        region.span = MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)
+                    }
+                }
             }
         }
     }

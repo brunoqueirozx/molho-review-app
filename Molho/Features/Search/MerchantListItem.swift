@@ -6,9 +6,53 @@ struct MerchantListItem: View {
     var body: some View {
         HStack(spacing: 10) {
             // Imagem à esquerda (96x96, rounded 24px)
-            RoundedRectangle(cornerRadius: Theme.corner24)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 96, height: 96)
+            Group {
+                if let imageUrl = merchant.headerImageUrl, !imageUrl.isEmpty {
+                    AsyncImage(url: URL(string: imageUrl)) { phase in
+                        switch phase {
+                        case .empty:
+                            // Loading
+                            RoundedRectangle(cornerRadius: Theme.corner24)
+                                .fill(Color.gray.opacity(0.2))
+                                .overlay {
+                                    ProgressView()
+                                        .tint(.gray)
+                                }
+                        case .success(let image):
+                            // Imagem carregada - crop quadrado
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 96, height: 96)
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.corner24))
+                        case .failure:
+                            // Erro ao carregar - placeholder
+                            RoundedRectangle(cornerRadius: Theme.corner24)
+                                .fill(Color.gray.opacity(0.3))
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(.gray.opacity(0.6))
+                                }
+                        @unknown default:
+                            // Fallback
+                            RoundedRectangle(cornerRadius: Theme.corner24)
+                                .fill(Color.gray.opacity(0.3))
+                        }
+                    }
+                    .frame(width: 96, height: 96)
+                } else {
+                    // Sem imagem - placeholder
+                    RoundedRectangle(cornerRadius: Theme.corner24)
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay {
+                            Image(systemName: "photo")
+                                .font(.system(size: 32))
+                                .foregroundColor(.gray.opacity(0.6))
+                        }
+                        .frame(width: 96, height: 96)
+                }
+            }
             
             // Conteúdo à direita
             VStack(alignment: .leading, spacing: Theme.spacing8) {

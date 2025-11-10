@@ -115,11 +115,55 @@ final class FirebaseMerchantRepository: MerchantRepository {
     
     // MARK: - Métodos auxiliares
     
+    /// Converte URLs do Firebase Storage (gs://) para URLs HTTP públicas
+    private func convertStorageUrl(_ gsUrl: String) -> String {
+        // Se já é uma URL HTTP, retorna como está
+        if gsUrl.hasPrefix("http://") || gsUrl.hasPrefix("https://") {
+            return gsUrl
+        }
+        
+        // Se é uma URL gs://, converte para HTTP
+        if gsUrl.hasPrefix("gs://") {
+            // Extrair o bucket e o path
+            // Formato: gs://bucket-name/path/to/file.png
+            let withoutPrefix = gsUrl.replacingOccurrences(of: "gs://", with: "")
+            
+            if let firstSlashIndex = withoutPrefix.firstIndex(of: "/") {
+                let bucket = String(withoutPrefix[..<firstSlashIndex])
+                let path = String(withoutPrefix[firstSlashIndex...].dropFirst()) // remove a /
+                
+                // Codificar o path para URL (/ deve virar %2F)
+                var allowedCharacters = CharacterSet.alphanumerics
+                allowedCharacters.insert(charactersIn: "-_.~") // caracteres permitidos sem encoding
+                let encodedPath = path.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? path
+                
+                // Construir URL HTTP do Firebase Storage
+                let url = "https://firebasestorage.googleapis.com/v0/b/\(bucket)/o/\(encodedPath)?alt=media"
+                print("🔄 Converteu: \(gsUrl)")
+                print("   ➡️ Para: \(url)")
+                return url
+            }
+        }
+        
+        // Se não conseguir converter, retorna a URL original
+        return gsUrl
+    }
+    
+    /// Converte array de URLs do Firebase Storage
+    private func convertStorageUrls(_ urls: [String]?) -> [String]? {
+        guard let urls = urls else { return nil }
+        return urls.map { convertStorageUrl($0) }
+    }
+    
     private func decodeMerchant(from document: DocumentSnapshot) -> Merchant? {
         guard let data = document.data() else {
             print("⚠️ Documento \(document.documentID) não tem dados")
             return nil
         }
+        
+        // 🔍 DEBUG: Imprimir todos os campos disponíveis no documento
+        print("\n📄 Documento: \(document.documentID)")
+        print("🔑 Campos disponíveis: \(data.keys.sorted())")
         
         // Converter tipos do Firestore para tipos compatíveis com JSON
         var processedData: [String: Any] = [:]
@@ -144,6 +188,64 @@ final class FirebaseMerchantRepository: MerchantRepository {
             }
         }
         
+        // 🔍 DEBUG: Verificar campos de imagens especificamente
+        // Tentar múltiplas variações de nomes para galleryImages
+        var galleryImagesArray: [String]? = nil
+        if let gallery = processedData["galleryImages"] as? [String] {
+            galleryImagesArray = convertStorageUrls(gallery)
+        } else if let gallery = processedData["gallery_images"] as? [String] {
+            galleryImagesArray = convertStorageUrls(gallery)
+        } else if let gallery = processedData["gallery"] as? [String] {
+            galleryImagesArray = convertStorageUrls(gallery)
+        }
+        
+        if let galleryImages = galleryImagesArray {
+            print("🖼️ galleryImages encontrado: \(galleryImages.count) imagens")
+            print("   ✅ URLs convertidas para HTTP:")
+            galleryImages.enumerated().forEach { index, url in
+                print("   [\(index)]: \(url)")
+            }
+        } else {
+            print("⚠️ galleryImages NÃO encontrado")
+            print("   Tentou: galleryImages, gallery_images, gallery")
+            if let value = processedData["galleryImages"] {
+                print("   Tipo recebido em 'galleryImages': \(type(of: value))")
+                print("   Valor: \(value)")
+            }
+        }
+        
+        // Tentar múltiplas variações para headerImageUrl
+        var headerImage: String? = nil
+        if let header = processedData["headerImageUrl"] as? String {
+            headerImage = convertStorageUrl(header)
+        } else if let header = processedData["header_image_url"] as? String {
+            headerImage = convertStorageUrl(header)
+        } else if let header = processedData["headerImage"] as? String {
+            headerImage = convertStorageUrl(header)
+        } else if let header = processedData["imageUrl"] as? String {
+            headerImage = convertStorageUrl(header)
+        }
+        
+        if let headerImageUrl = headerImage {
+            print("🖼️ headerImageUrl convertido: \(headerImageUrl)")
+        } else {
+            print("⚠️ headerImageUrl NÃO encontrado")
+        }
+        
+        // Tentar múltiplas variações para carouselImages
+        var carouselImagesArray: [String]? = nil
+        if let carousel = processedData["carouselImages"] as? [String] {
+            carouselImagesArray = convertStorageUrls(carousel)
+        } else if let carousel = processedData["carousel_images"] as? [String] {
+            carouselImagesArray = convertStorageUrls(carousel)
+        } else if let carousel = processedData["carousel"] as? [String] {
+            carouselImagesArray = convertStorageUrls(carousel)
+        }
+        
+        if let carouselImages = carouselImagesArray {
+            print("🖼️ carouselImages: \(carouselImages.count) imagens")
+        }
+        
         // Garantir que campos obrigatórios existam
         guard let name = processedData["name"] as? String else {
             print("⚠️ Documento \(document.documentID) está faltando campo 'name'")
@@ -158,9 +260,9 @@ final class FirebaseMerchantRepository: MerchantRepository {
         let merchant = Merchant(
             id: document.documentID,
             name: name,
-            headerImageUrl: processedData["headerImageUrl"] as? String,
-            carouselImages: processedData["carouselImages"] as? [String],
-            galleryImages: processedData["galleryImages"] as? [String],
+            headerImageUrl: headerImage,
+            carouselImages: carouselImagesArray,
+            galleryImages: galleryImagesArray,
             categories: processedData["categories"] as? [String],
             style: processedData["style"] as? String,
             criticRating: processedData["criticRating"] as? Double,
@@ -177,6 +279,8 @@ final class FirebaseMerchantRepository: MerchantRepository {
             createdAt: decodeDateFromProcessed(processedData["createdAt"]),
             updatedAt: decodeDateFromProcessed(processedData["updatedAt"])
         )
+        
+        print("✅ Merchant '\(name)' decodificado com \(merchant.galleryImages?.count ?? 0) galleryImages\n")
         
         return merchant
     }
@@ -238,6 +342,69 @@ final class FirebaseMerchantRepository: MerchantRepository {
     
     private func decodeMerchant(from document: QueryDocumentSnapshot) -> Merchant? {
         return decodeMerchant(from: document as DocumentSnapshot)
+    }
+    
+    // MARK: - Métodos de debug
+    
+    func debugFetchDocument(id: String) async {
+        print("\n🔍 ==================== DEBUG FETCH ====================")
+        print("📄 Buscando documento: \(id)")
+        
+        do {
+            let doc = try await db.collection(collectionName).document(id).getDocument()
+            
+            if !doc.exists {
+                print("❌ Documento não existe!")
+                return
+            }
+            
+            guard let data = doc.data() else {
+                print("❌ Documento sem dados")
+                return
+            }
+            
+            print("\n✅ Documento encontrado!")
+            print("📦 Total de campos: \(data.count)")
+            print("\n🔑 TODOS OS CAMPOS E VALORES:\n")
+            
+            // Ordenar campos alfabeticamente
+            let sortedKeys = data.keys.sorted()
+            
+            for key in sortedKeys {
+                let value = data[key]
+                
+                if let stringValue = value as? String {
+                    print("   \(key): \"\(stringValue)\"")
+                } else if let arrayValue = value as? [Any] {
+                    print("   \(key): Array com \(arrayValue.count) itens")
+                    if let stringArray = value as? [String] {
+                        stringArray.enumerated().forEach { index, item in
+                            print("      [\(index)]: \"\(item)\"")
+                        }
+                    } else {
+                        arrayValue.enumerated().forEach { index, item in
+                            print("      [\(index)]: \(item)")
+                        }
+                    }
+                } else if let dictValue = value as? [String: Any] {
+                    print("   \(key): Dictionary com \(dictValue.count) campos")
+                    for (subKey, subValue) in dictValue {
+                        print("      \(subKey): \(subValue)")
+                    }
+                } else if let numberValue = value as? NSNumber {
+                    print("   \(key): \(numberValue)")
+                } else if let timestamp = value as? Timestamp {
+                    print("   \(key): \(timestamp.dateValue())")
+                } else {
+                    print("   \(key): \(value) (tipo: \(type(of: value)))")
+                }
+            }
+            
+            print("\n🔍 ==================== FIM DEBUG ====================\n")
+            
+        } catch {
+            print("❌ Erro ao buscar documento: \(error)")
+        }
     }
     
     // MARK: - Métodos de escrita (para uso futuro)

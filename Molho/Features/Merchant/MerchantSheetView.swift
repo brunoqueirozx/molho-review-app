@@ -27,6 +27,15 @@ struct MerchantSheetView: View {
     init(merchant: Merchant) {
         self.merchant = merchant
         _viewModel = StateObject(wrappedValue: MerchantViewModel(merchant: merchant))
+        print("🏪 MerchantSheetView inicializado para: \(merchant.name)")
+        print("   - headerImageUrl: \(merchant.headerImageUrl ?? "nil")")
+        print("   - carouselImages: \(merchant.carouselImages?.count ?? 0) imagens")
+        print("   - galleryImages: \(merchant.galleryImages?.count ?? 0) imagens")
+        if let gallery = merchant.galleryImages {
+            gallery.enumerated().forEach { index, url in
+                print("      [\(index)]: \(url)")
+            }
+        }
     }
     
     var body: some View {
@@ -36,19 +45,46 @@ struct MerchantSheetView: View {
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
                         // Imagem de fundo
-                        RoundedRectangle(cornerRadius: 0)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 420)
-                            .overlay(
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: .clear, location: 0.5),
-                                        .init(color: .black, location: 1.0)
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                        Group {
+                            if let headerImageUrl = merchant.headerImageUrl, let url = URL(string: headerImageUrl) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 420)
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(height: 420)
+                                            .clipped()
+                                    case .failure:
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 420)
+                                    @unknown default:
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 420)
+                                    }
+                                }
+                            } else {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(height: 420)
+                            }
+                        }
+                        .overlay(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .clear, location: 0.5),
+                                    .init(color: .black, location: 1.0)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
+                        )
                         
                         // Header com botões (sobreposto com backdrop blur)
                         VStack {
@@ -128,6 +164,8 @@ struct MerchantSheetView: View {
                                     .foregroundStyle(Color(hex: "#1f1f1f"))
                                     .tracking(0.38)
                                     .lineSpacing(6)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .multilineTextAlignment(.leading)
                                 
                                 // Categorias
                                 HStack(spacing: Theme.spacing8) {
@@ -136,6 +174,7 @@ struct MerchantSheetView: View {
                                             .font(.system(size: 17))
                                             .foregroundStyle(Theme.textNeutral)
                                             .tracking(-0.43)
+                                            .lineLimit(1)
                                         
                                         Circle()
                                             .fill(Theme.textNeutral)
@@ -147,6 +186,7 @@ struct MerchantSheetView: View {
                                             .font(.system(size: 17))
                                             .foregroundStyle(Theme.textNeutral)
                                             .tracking(-0.43)
+                                            .lineLimit(1)
                                     }
                                 }
                                 
@@ -165,11 +205,14 @@ struct MerchantSheetView: View {
                                         .foregroundStyle(Theme.textNeutral)
                                         .tracking(-0.43)
                                         .lineSpacing(5)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.leading)
                                 }
                             }
+                            .padding(.horizontal, Theme.spacing16)
                             .padding(.top, Theme.spacing32)
                             
-                            // Chips de navegação
+                            // Chips de navegação (scroll horizontal sem margem)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: Theme.spacing8) {
                                     ForEach(MerchantTab.allCases, id: \.self) { tab in
@@ -181,6 +224,7 @@ struct MerchantSheetView: View {
                                         }
                                     }
                                 }
+                                .padding(.horizontal, Theme.spacing16)
                             }
                             .padding(.vertical, Theme.spacing16)
                             
@@ -188,6 +232,7 @@ struct MerchantSheetView: View {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
+                                .padding(.horizontal, Theme.spacing16)
                             
                             // Seção Localização
                             VStack(alignment: .leading, spacing: Theme.spacing8) {
@@ -202,14 +247,18 @@ struct MerchantSheetView: View {
                                         .foregroundStyle(Color(hex: "#989898"))
                                         .tracking(-0.43)
                                         .lineSpacing(5)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.leading)
                                 }
                             }
+                            .padding(.horizontal, Theme.spacing16)
                             .padding(.vertical, Theme.spacing16)
                             
                             // Divider
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
+                                .padding(.horizontal, Theme.spacing16)
                             
                             // Seção Horário
                             VStack(alignment: .leading, spacing: Theme.spacing8) {
@@ -233,53 +282,188 @@ struct MerchantSheetView: View {
                                             .font(.system(size: 17))
                                             .foregroundStyle(Color(hex: "#989898"))
                                             .tracking(-0.43)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .multilineTextAlignment(.leading)
                                     }
                                 }
                             }
+                            .padding(.horizontal, Theme.spacing16)
                             .padding(.vertical, Theme.spacing16)
                             
                             // Divider
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
+                                .padding(.horizontal, Theme.spacing16)
                             
                             // Grade de fotos
-                            HStack(spacing: Theme.spacing8) {
-                                // Foto grande à esquerda (220x220)
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 220, height: 220)
-                                
-                                // Grid de 5 fotos (3 colunas x 2 linhas)
-                                VStack(spacing: Theme.spacing8) {
+                            if let galleryImages = viewModel.merchant.galleryImages, !galleryImages.isEmpty {
+                                let _ = print("🎨 MerchantSheetView: Renderizando galeria com \(galleryImages.count) imagens")
+                                VStack(alignment: .leading, spacing: Theme.spacing16) {
+                                    // Título da galeria
+                                    Text("Galeria")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundStyle(Color.black.opacity(0.8))
+                                        .tracking(-0.45)
+                                        .padding(.horizontal, Theme.spacing16)
+                                    
                                     HStack(spacing: Theme.spacing8) {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
-                                    }
-                                    HStack(spacing: Theme.spacing8) {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 107, height: 106)
+                                        Spacer()
+                                            .frame(width: Theme.spacing16)
+                                        
+                                        // Foto grande à esquerda (220x220)
+                                        if let firstImageUrl = galleryImages.first, let url = URL(string: firstImageUrl) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    ZStack {
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(Color.gray.opacity(0.2))
+                                                            .frame(width: 220, height: 220)
+                                                        ProgressView()
+                                                            .progressViewStyle(CircularProgressViewStyle(tint: Theme.primaryGreen))
+                                                    }
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                        .frame(width: 220, height: 220)
+                                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                case .failure(let error):
+                                                    ZStack {
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(Color.red.opacity(0.1))
+                                                            .frame(width: 220, height: 220)
+                                                        VStack(spacing: 8) {
+                                                            Image(systemName: "exclamationmark.triangle")
+                                                                .font(.system(size: 24))
+                                                                .foregroundColor(.red.opacity(0.6))
+                                                            Text("Erro ao carregar")
+                                                                .font(.system(size: 12))
+                                                                .foregroundColor(.red.opacity(0.6))
+                                                        }
+                                                    }
+                                                    .onAppear {
+                                                        print("❌ Erro ao carregar imagem: \(firstImageUrl)")
+                                                        print("   Erro: \(error)")
+                                                    }
+                                                @unknown default:
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.gray.opacity(0.3))
+                                                        .frame(width: 220, height: 220)
+                                                }
+                                            }
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.gray.opacity(0.3))
+                                                .frame(width: 220, height: 220)
+                                        }
+                                        
+                                        // Grid de 6 fotos (3 colunas x 2 linhas)
+                                        VStack(spacing: Theme.spacing8) {
+                                            // Primeira linha
+                                            HStack(spacing: Theme.spacing8) {
+                                                ForEach(Array(galleryImages.dropFirst().prefix(3).enumerated()), id: \.offset) { index, imageUrl in
+                                                    if let url = URL(string: imageUrl) {
+                                                        AsyncImage(url: url) { phase in
+                                                            switch phase {
+                                                            case .empty:
+                                                                ZStack {
+                                                                    RoundedRectangle(cornerRadius: 8)
+                                                                        .fill(Color.gray.opacity(0.2))
+                                                                        .frame(width: 107, height: 106)
+                                                                    ProgressView()
+                                                                        .progressViewStyle(CircularProgressViewStyle(tint: Theme.primaryGreen))
+                                                                        .scaleEffect(0.7)
+                                                                }
+                                                            case .success(let image):
+                                                                image
+                                                                    .resizable()
+                                                                    .aspectRatio(contentMode: .fill)
+                                                                    .frame(width: 107, height: 106)
+                                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                            case .failure:
+                                                                ZStack {
+                                                                    RoundedRectangle(cornerRadius: 8)
+                                                                        .fill(Color.red.opacity(0.1))
+                                                                        .frame(width: 107, height: 106)
+                                                                    Image(systemName: "exclamationmark.triangle")
+                                                                        .font(.system(size: 16))
+                                                                        .foregroundColor(.red.opacity(0.6))
+                                                                }
+                                                            @unknown default:
+                                                                RoundedRectangle(cornerRadius: 8)
+                                                                    .fill(Color.gray.opacity(0.3))
+                                                                    .frame(width: 107, height: 106)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                // Preencher espaços vazios se houver menos de 3 imagens
+                                                ForEach(0..<max(0, 3 - min(3, galleryImages.count - 1)), id: \.self) { _ in
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.gray.opacity(0.3))
+                                                        .frame(width: 107, height: 106)
+                                                }
+                                            }
+                                            
+                                            // Segunda linha
+                                            HStack(spacing: Theme.spacing8) {
+                                                ForEach(Array(galleryImages.dropFirst(4).prefix(3).enumerated()), id: \.offset) { index, imageUrl in
+                                                    if let url = URL(string: imageUrl) {
+                                                        AsyncImage(url: url) { phase in
+                                                            switch phase {
+                                                            case .empty:
+                                                                ZStack {
+                                                                    RoundedRectangle(cornerRadius: 8)
+                                                                        .fill(Color.gray.opacity(0.2))
+                                                                        .frame(width: 107, height: 106)
+                                                                    ProgressView()
+                                                                        .progressViewStyle(CircularProgressViewStyle(tint: Theme.primaryGreen))
+                                                                        .scaleEffect(0.7)
+                                                                }
+                                                            case .success(let image):
+                                                                image
+                                                                    .resizable()
+                                                                    .aspectRatio(contentMode: .fill)
+                                                                    .frame(width: 107, height: 106)
+                                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                            case .failure:
+                                                                ZStack {
+                                                                    RoundedRectangle(cornerRadius: 8)
+                                                                        .fill(Color.red.opacity(0.1))
+                                                                        .frame(width: 107, height: 106)
+                                                                    Image(systemName: "exclamationmark.triangle")
+                                                                        .font(.system(size: 16))
+                                                                        .foregroundColor(.red.opacity(0.6))
+                                                                }
+                                                            @unknown default:
+                                                                RoundedRectangle(cornerRadius: 8)
+                                                                    .fill(Color.gray.opacity(0.3))
+                                                                    .frame(width: 107, height: 106)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                // Preencher espaços vazios se houver menos de 6 imagens no total
+                                                ForEach(0..<max(0, 3 - min(3, max(0, galleryImages.count - 4))), id: \.self) { _ in
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.gray.opacity(0.3))
+                                                        .frame(width: 107, height: 106)
+                                                }
+                                            }
+                                        }
+                                        
+                                        Spacer()
+                                            .frame(width: Theme.spacing16)
                                     }
                                 }
+                                .padding(.top, Theme.spacing16)
+                                .padding(.bottom, Theme.spacing32)
                             }
-                            .padding(.top, Theme.spacing16)
-                            .padding(.bottom, Theme.spacing32)
                         }
-                        .padding(.horizontal, Theme.spacing16)
                         .background(.white)
                         .clipShape(
                             .rect(
