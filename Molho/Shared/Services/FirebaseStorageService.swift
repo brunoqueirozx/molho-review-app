@@ -115,6 +115,26 @@ final class FirebaseStorageService {
             try await item.delete()
         }
     }
+    
+    // MARK: - Download de Imagens
+    
+    /// Converte URL gs:// para URL HTTP pública
+    func getDownloadURL(from gsURL: String) async throws -> URL {
+        let storageRef = storage.reference(forURL: gsURL)
+        return try await storageRef.downloadURL()
+    }
+    
+    /// Baixa imagem do Storage e retorna UIImage
+    func downloadImage(from gsURL: String) async throws -> UIImage {
+        let downloadURL = try await getDownloadURL(from: gsURL)
+        let (data, _) = try await URLSession.shared.data(from: downloadURL)
+        
+        guard let image = UIImage(data: data) else {
+            throw StorageError.downloadFailed
+        }
+        
+        return image
+    }
 }
 
 // MARK: - Tipos auxiliares
@@ -136,6 +156,7 @@ extension FirebaseStorageService {
         case compressionFailed
         case uploadFailed
         case deleteFailed
+        case downloadFailed
         
         var errorDescription: String? {
             switch self {
@@ -145,6 +166,8 @@ extension FirebaseStorageService {
                 return "Falha ao fazer upload da imagem"
             case .deleteFailed:
                 return "Falha ao deletar a imagem"
+            case .downloadFailed:
+                return "Falha ao baixar a imagem"
             }
         }
     }

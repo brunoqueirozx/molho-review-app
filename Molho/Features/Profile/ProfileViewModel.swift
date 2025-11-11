@@ -66,8 +66,8 @@ final class ProfileViewModel: ObservableObject {
                     self.avatarUrl = user.avatarUrl
                     
                     // Se houver avatar URL, carregar a imagem
-                    if let urlString = user.avatarUrl, let url = URL(string: urlString) {
-                        await loadAvatarFromURL(url)
+                    if let urlString = user.avatarUrl, !urlString.isEmpty {
+                        await loadAvatarFromStorage(urlString)
                     }
                     
                     hasProfileData = true
@@ -160,8 +160,8 @@ final class ProfileViewModel: ObservableObject {
                 self.avatarUrl = user.avatarUrl
                 
                 // Se houver avatar URL, carregar a imagem
-                if let urlString = user.avatarUrl, let url = URL(string: urlString) {
-                    await loadAvatarFromURL(url)
+                if let urlString = user.avatarUrl, !urlString.isEmpty {
+                    await loadAvatarFromStorage(urlString)
                 }
             }
         } catch {
@@ -173,15 +173,17 @@ final class ProfileViewModel: ObservableObject {
         isLoading = false
     }
     
-    private func loadAvatarFromURL(_ url: URL) async {
+    private func loadAvatarFromStorage(_ gsURL: String) async {
+        #if canImport(FirebaseStorage)
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            if let image = UIImage(data: data) {
-                avatarImage = image
-            }
+            print("🔄 Carregando avatar do Storage: \(gsURL)")
+            let image = try await storageService.downloadImage(from: gsURL)
+            avatarImage = image
+            print("✅ Avatar carregado com sucesso!")
         } catch {
-            print("❌ Erro ao carregar imagem do avatar da URL: \(error)")
+            print("❌ Erro ao carregar imagem do avatar: \(error.localizedDescription)")
         }
+        #endif
     }
     
     // MARK: - Salvar Perfil
