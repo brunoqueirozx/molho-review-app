@@ -52,27 +52,32 @@ struct MerchantSheetView: View {
                                     case .empty:
                                         Rectangle()
                                             .fill(Color.gray.opacity(0.3))
-                                            .frame(height: 420)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 320)
                                     case .success(let image):
                                         image
                                             .resizable()
                                             .aspectRatio(contentMode: .fill)
-                                            .frame(height: 420)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 320)
                                             .clipped()
                                     case .failure:
                                         Rectangle()
                                             .fill(Color.gray.opacity(0.3))
-                                            .frame(height: 420)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 320)
                                     @unknown default:
                                         Rectangle()
                                             .fill(Color.gray.opacity(0.3))
-                                            .frame(height: 420)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 320)
                                     }
                                 }
                             } else {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.3))
-                                    .frame(height: 420)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 320)
                             }
                         }
                         .overlay(
@@ -91,9 +96,8 @@ struct MerchantSheetView: View {
                             HStack {
                                 // Botão voltar
                                 Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        dismiss()
-                                    }
+                                    print("🔙 Botão voltar clicado - fechando sheet")
+                                    dismiss()
                                 }) {
                                     Image(systemName: "arrow.left")
                                         .font(.system(size: 20))
@@ -102,21 +106,33 @@ struct MerchantSheetView: View {
                                         .background(.white)
                                         .clipShape(Circle())
                                 }
+                                .buttonStyle(.plain)
                                 
                                 Spacer()
                                 
                                 // Botões de ação
-                                HStack(spacing: Theme.spacing16) {
-                                    Button(action: { print("Eye tapped") }) {
-                                        Image(systemName: "eye")
+                                HStack(spacing: 8) {
+                                    Button(action: { print("⭐ Star tapped") }) {
+                                        Image(systemName: "star")
                                             .font(.system(size: 20))
                                             .foregroundStyle(.black)
                                             .frame(width: 40, height: 40)
                                             .background(.white)
                                             .clipShape(Circle())
                                     }
+                                    .buttonStyle(.plain)
                                     
-                                    Button(action: { print("Bookmark tapped") }) {
+                                    Button(action: { print("❤️ Heart tapped") }) {
+                                        Image(systemName: "heart")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(.black)
+                                            .frame(width: 40, height: 40)
+                                            .background(.white)
+                                            .clipShape(Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    
+                                    Button(action: { print("🔖 Bookmark tapped") }) {
                                         Image(systemName: "bookmark")
                                             .font(.system(size: 20))
                                             .foregroundStyle(.black)
@@ -124,15 +140,7 @@ struct MerchantSheetView: View {
                                             .background(.white)
                                             .clipShape(Circle())
                                     }
-                                    
-                                    Button(action: { print("Share tapped") }) {
-                                        Image(systemName: "paperplane")
-                                            .font(.system(size: 20))
-                                            .foregroundStyle(.black)
-                                            .frame(width: 40, height: 40)
-                                            .background(.white)
-                                            .clipShape(Circle())
-                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             .padding(.horizontal, Theme.spacing16)
@@ -142,8 +150,11 @@ struct MerchantSheetView: View {
                             Spacer()
                         }
                         .background(.ultraThinMaterial.opacity(0.1))
+                        .allowsHitTesting(true)
+                        .zIndex(10)
                     }
-                    .frame(height: 420)
+                    .frame(height: 320)
+                    .zIndex(10)
                     
                     Spacer()
                 }
@@ -156,7 +167,7 @@ struct MerchantSheetView: View {
                             .frame(height: 180)
                         
                         // Conteúdo branco com bordas arredondadas no topo
-                        VStack(alignment: .leading, spacing: Theme.spacing24) {
+                        VStack(alignment: .leading, spacing: 24) {
                             // Título e informações
                             VStack(alignment: .leading, spacing: 18) {
                                 Text(viewModel.merchant.name)
@@ -164,6 +175,7 @@ struct MerchantSheetView: View {
                                     .foregroundStyle(Color(hex: "#1f1f1f"))
                                     .tracking(0.38)
                                     .lineSpacing(6)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .multilineTextAlignment(.leading)
                                 
@@ -201,18 +213,15 @@ struct MerchantSheetView: View {
                                 // Descrição
                                 if let description = viewModel.merchant.description {
                                     Text(description)
-                                        .font(.system(size: 17))
-                                        .foregroundStyle(Theme.textNeutral)
-                                        .tracking(-0.43)
-                                        .lineSpacing(5)
+                                        .font(Font.custom("SF Pro", size: 17))
+                                        .foregroundColor(Color(red: 0.32, green: 0.32, blue: 0.32))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                         .fixedSize(horizontal: false, vertical: true)
                                         .multilineTextAlignment(.leading)
                                 }
                             }
-                            .padding(.horizontal, Theme.spacing16)
-                            .padding(.top, Theme.spacing32)
                             
-                            // Chips de navegação (scroll horizontal sem margem)
+                            // Chips de navegação (scroll horizontal)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: Theme.spacing8) {
                                     ForEach(MerchantTab.allCases, id: \.self) { tab in
@@ -224,7 +233,6 @@ struct MerchantSheetView: View {
                                         }
                                     }
                                 }
-                                .padding(.horizontal, Theme.spacing16)
                             }
                             .padding(.vertical, Theme.spacing16)
                             
@@ -232,7 +240,6 @@ struct MerchantSheetView: View {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
-                                .padding(.horizontal, Theme.spacing16)
                             
                             // Seção Localização
                             VStack(alignment: .leading, spacing: Theme.spacing8) {
@@ -251,14 +258,12 @@ struct MerchantSheetView: View {
                                         .multilineTextAlignment(.leading)
                                 }
                             }
-                            .padding(.horizontal, Theme.spacing16)
                             .padding(.vertical, Theme.spacing16)
                             
                             // Divider
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
-                                .padding(.horizontal, Theme.spacing16)
                             
                             // Seção Horário
                             VStack(alignment: .leading, spacing: Theme.spacing8) {
@@ -287,14 +292,12 @@ struct MerchantSheetView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal, Theme.spacing16)
                             .padding(.vertical, Theme.spacing16)
                             
                             // Divider
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
-                                .padding(.horizontal, Theme.spacing16)
                             
                             // Grade de fotos
                             if let galleryImages = viewModel.merchant.galleryImages, !galleryImages.isEmpty {
@@ -305,11 +308,9 @@ struct MerchantSheetView: View {
                                         .font(.system(size: 20, weight: .bold))
                                         .foregroundStyle(Color.black.opacity(0.8))
                                         .tracking(-0.45)
-                                        .padding(.horizontal, Theme.spacing16)
                                     
-                                    HStack(spacing: Theme.spacing8) {
-                                        Spacer()
-                                            .frame(width: Theme.spacing16)
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: Theme.spacing8) {
                                         
                                         // Foto grande à esquerda (220x220)
                                         if let firstImageUrl = galleryImages.first, let url = URL(string: firstImageUrl) {
@@ -455,24 +456,17 @@ struct MerchantSheetView: View {
                                                 }
                                             }
                                         }
-                                        
-                                        Spacer()
-                                            .frame(width: Theme.spacing16)
+                                        }
                                     }
                                 }
                                 .padding(.top, Theme.spacing16)
-                                .padding(.bottom, Theme.spacing32)
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 32)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                         .background(.white)
-                        .clipShape(
-                            .rect(
-                                topLeadingRadius: 32,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 32
-                            )
-                        )
+                        .cornerRadius(32)
                     }
                 }
             }
