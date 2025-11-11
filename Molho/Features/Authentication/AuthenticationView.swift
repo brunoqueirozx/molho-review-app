@@ -42,7 +42,7 @@ struct AuthenticationView: View {
                         // Sign in with Apple
                         SignInWithAppleButton(
                             onRequest: { request in
-                                request.requestedScopes = [.fullName, .email]
+                                authManager.prepareAppleSignInRequest(request)
                             },
                             onCompletion: { result in
                                 Task {
