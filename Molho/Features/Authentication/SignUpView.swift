@@ -35,17 +35,12 @@ struct SignUpView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text("Criar Conta")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("Preencha os dados abaixo")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    .padding(.top, 40)
+                    // Logo
+                    Image("molho-logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120)
+                        .padding(.top, 60)
                     
                     // Formulário
                     VStack(spacing: 16) {
