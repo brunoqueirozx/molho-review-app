@@ -137,23 +137,39 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Apple Sign In
     
     func signInWithApple(authorization: ASAuthorization) async throws {
+        print("🍎 [1/5] Verificando credencial...")
         guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            print("🍎 ❌ Credencial inválida")
             throw AuthError.invalidCredential
         }
+        print("🍎 ✅ Credencial válida. User ID: \(appleIDCredential.user)")
         
-        guard let appleIDToken = appleIDCredential.identityToken,
-              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+        print("🍎 [2/5] Extraindo token...")
+        guard let appleIDToken = appleIDCredential.identityToken else {
+            print("🍎 ❌ Token não encontrado")
             throw AuthError.invalidToken
         }
         
+        guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+            print("🍎 ❌ Falha ao converter token para string")
+            throw AuthError.invalidToken
+        }
+        print("🍎 ✅ Token extraído com sucesso")
+        
+        print("🍎 [3/5] Nonce atual: \(currentNonce ?? "NENHUM")")
+        
         do {
+            print("🍎 [4/5] Criando credencial Firebase...")
             let credential = OAuthProvider.appleCredential(
                 withIDToken: idTokenString,
                 rawNonce: currentNonce,
                 fullName: appleIDCredential.fullName
             )
+            print("🍎 ✅ Credencial Firebase criada")
             
+            print("🍎 [5/5] Fazendo login no Firebase...")
             let authResult = try await Auth.auth().signIn(with: credential)
+            print("🍎 ✅ Login no Firebase bem-sucedido! UID: \(authResult.user.uid)")
             
             // Se tiver informações do usuário, atualizar perfil
             if let fullName = appleIDCredential.fullName {
@@ -161,6 +177,7 @@ class AuthenticationManager: ObservableObject {
                     .compactMap { $0 }
                     .joined(separator: " ")
                 if !displayName.isEmpty {
+                    print("🍎 Atualizando nome do perfil: \(displayName)")
                     let changeRequest = authResult.user.createProfileChangeRequest()
                     changeRequest.displayName = displayName
                     try await changeRequest.commitChanges()
@@ -171,10 +188,14 @@ class AuthenticationManager: ObservableObject {
             self.isAuthenticated = true
             self.errorMessage = nil
             
-            print("✅ Login com Apple realizado com sucesso")
+            print("🍎 ✅ Login com Apple realizado com sucesso!")
         } catch {
             self.errorMessage = "Erro ao fazer login com Apple"
-            print("❌ Erro ao fazer login com Apple: \(error.localizedDescription)")
+            print("🍎 ❌ Erro ao fazer login com Apple: \(error.localizedDescription)")
+            if let nsError = error as NSError? {
+                print("🍎 ❌ Domínio: \(nsError.domain), Código: \(nsError.code)")
+                print("🍎 ❌ Info: \(nsError.userInfo)")
+            }
             throw error
         }
     }
@@ -224,10 +245,13 @@ class AuthenticationManager: ObservableObject {
 
     // Generate and hash nonce for Apple Sign In
     func prepareAppleSignInRequest(_ request: ASAuthorizationAppleIDRequest) {
+        print("🍎 Preparando request do Apple Sign In...")
         let nonce = randomNonceString()
         currentNonce = nonce
         request.requestedScopes = [.fullName, .email]
         request.nonce = sha256(nonce)
+        print("🍎 ✅ Nonce gerado e configurado: \(nonce.prefix(10))...")
+        print("🍎 ✅ Scopes solicitados: fullName, email")
     }
 
     private func sha256(_ input: String) -> String {

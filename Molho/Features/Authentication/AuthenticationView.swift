@@ -5,6 +5,8 @@ struct AuthenticationView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @State private var showSignUp = false
     @State private var showLogin = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     
     var body: some View {
         NavigationStack {
@@ -46,16 +48,7 @@ struct AuthenticationView: View {
                             },
                             onCompletion: { result in
                                 Task {
-                                    switch result {
-                                    case .success(let authorization):
-                                        do {
-                                            try await authManager.signInWithApple(authorization: authorization)
-                                        } catch {
-                                            print("Erro ao fazer login com Apple: \(error)")
-                                        }
-                                    case .failure(let error):
-                                        print("Erro ao fazer login com Apple: \(error)")
-                                    }
+                                    await handleAppleSignIn(result: result)
                                 }
                             }
                         )
@@ -125,6 +118,41 @@ struct AuthenticationView: View {
             }
             .navigationDestination(isPresented: $showLogin) {
                 LoginView()
+            }
+            .alert("Erro no Login", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func handleAppleSignIn(result: Result<ASAuthorization, Error>) async {
+        switch result {
+        case .success(let authorization):
+            do {
+                print("🍎 Iniciando login com Apple...")
+                try await authManager.signInWithApple(authorization: authorization)
+                print("🍎 ✅ Login com Apple bem-sucedido!")
+            } catch {
+                await MainActor.run {
+                    print("🍎 ❌ Erro no login com Apple: \(error.localizedDescription)")
+                    errorMessage = authManager.errorMessage ?? "Erro ao fazer login com Apple: \(error.localizedDescription)"
+                    showError = true
+                }
+            }
+        case .failure(let error):
+            await MainActor.run {
+                // Se o usuário cancelou, não mostrar erro
+                let nsError = error as NSError
+                if nsError.domain == "com.apple.AuthenticationServices.AuthorizationError" && nsError.code == 1001 {
+                    print("🍎 Login com Apple cancelado pelo usuário")
+                    return
+                }
+                
+                print("🍎 ❌ Falha na autorização com Apple: \(error.localizedDescription)")
+                errorMessage = "Erro ao fazer login com Apple: \(error.localizedDescription)"
+                showError = true
             }
         }
     }
