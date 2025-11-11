@@ -15,14 +15,42 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 // Barra de navegação customizada
                 HStack {
+                    if viewModel.isEditMode {
+                        Button(action: {
+                            if viewModel.hasProfileData {
+                                viewModel.cancelEdit()
+                            } else {
+                                dismiss()
+                            }
+                        }) {
+                            Text("Cancelar")
+                                .font(.system(size: 17))
+                                .foregroundColor(Theme.primaryGreen)
+                        }
+                    }
+                    
                     Spacer()
                     
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("Cancelar")
-                            .font(.system(size: 17))
+                    if !viewModel.isEditMode {
+                        Button(action: {
+                            viewModel.enableEditMode()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 14))
+                                Text("Editar")
+                                    .font(.system(size: 17, weight: .semibold))
+                            }
                             .foregroundColor(Theme.primaryGreen)
+                        }
+                    } else if viewModel.hasProfileData {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 17))
+                                .foregroundColor(Theme.primaryGreen)
+                        }
                     }
                 }
                 .padding(.horizontal, Theme.spacing16)
@@ -46,7 +74,8 @@ struct ProfileView: View {
                                 // MARK: - Avatar
                                 AvatarPickerView(
                                     avatarImage: $viewModel.avatarImage,
-                                    selectedItem: $viewModel.selectedAvatarItem
+                                    selectedItem: $viewModel.selectedAvatarItem,
+                                    isEditMode: viewModel.isEditMode
                                 )
                                 .onChange(of: viewModel.selectedAvatarItem) { _ in
                                     Task {
@@ -63,7 +92,8 @@ struct ProfileView: View {
                                     title: "Nome",
                                     placeholder: "Seu nome completo",
                                     text: $viewModel.name,
-                                    isKeyboardFocused: $isKeyboardFocused
+                                    isKeyboardFocused: $isKeyboardFocused,
+                                    isReadOnly: !viewModel.isEditMode
                                 )
                                 
                                 // ID do usuário (somente leitura)
@@ -82,7 +112,8 @@ struct ProfileView: View {
                                     text: $viewModel.email,
                                     isKeyboardFocused: $isKeyboardFocused,
                                     keyboardType: .emailAddress,
-                                    autocapitalization: .never
+                                    autocapitalization: .never,
+                                    isReadOnly: !viewModel.isEditMode
                                 )
                                 
                                 // Telefone
@@ -91,52 +122,52 @@ struct ProfileView: View {
                                     placeholder: "(11) 98765-4321",
                                     text: $viewModel.phone,
                                     isKeyboardFocused: $isKeyboardFocused,
-                                    keyboardType: .phonePad
+                                    keyboardType: .phonePad,
+                                    isReadOnly: !viewModel.isEditMode
                                 )
                             }
                             .padding(.horizontal, Theme.spacing16)
                             
-                            // MARK: - Botão Salvar
+                            // MARK: - Botões
                             VStack(spacing: Theme.spacing12) {
-                                if let errorMessage = viewModel.validationMessage, !viewModel.isFormValid {
-                                    Text(errorMessage)
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, Theme.spacing16)
-                                }
-                                
-                                if let saveError = viewModel.saveError {
-                                    Text(saveError)
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, Theme.spacing16)
-                                }
-                                
-                                Button(action: {
-                                    Task {
-                                        let success = await viewModel.saveProfile()
-                                        if success {
-                                            dismiss()
-                                        }
+                                if viewModel.isEditMode {
+                                    if let errorMessage = viewModel.validationMessage, !viewModel.isFormValid {
+                                        Text(errorMessage)
+                                            .font(.caption)
+                                            .foregroundColor(.red)
+                                            .padding(.horizontal, Theme.spacing16)
                                     }
-                                }) {
-                                    HStack {
-                                        if viewModel.isSaving {
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                                .padding(.trailing, 8)
-                                        }
-                                        Text(viewModel.isSaving ? "Salvando..." : "Salvar Perfil")
-                                            .font(.system(size: 17, weight: .semibold))
+                                    
+                                    if let saveError = viewModel.saveError {
+                                        Text(saveError)
+                                            .font(.caption)
+                                            .foregroundColor(.red)
+                                            .padding(.horizontal, Theme.spacing16)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, Theme.spacing16)
-                                    .background(viewModel.isFormValid && !viewModel.isSaving ? Theme.primaryGreen : Color.gray)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(Theme.corner12)
+                                    
+                                    Button(action: {
+                                        Task {
+                                            await viewModel.saveProfile()
+                                        }
+                                    }) {
+                                        HStack {
+                                            if viewModel.isSaving {
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                    .padding(.trailing, 8)
+                                            }
+                                            Text(viewModel.isSaving ? "Salvando..." : "Salvar Perfil")
+                                                .font(.system(size: 17, weight: .semibold))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, Theme.spacing16)
+                                        .background(viewModel.isFormValid && !viewModel.isSaving ? Theme.primaryGreen : Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(Theme.corner12)
+                                    }
+                                    .disabled(!viewModel.isFormValid || viewModel.isSaving)
+                                    .padding(.horizontal, Theme.spacing16)
                                 }
-                                .disabled(!viewModel.isFormValid || viewModel.isSaving)
-                                .padding(.horizontal, Theme.spacing16)
                                 
                                 // MARK: - Botão Logout
                                 Button(action: {
@@ -178,9 +209,22 @@ struct ProfileView: View {
 struct AvatarPickerView: View {
     @Binding var avatarImage: UIImage?
     @Binding var selectedItem: PhotosPickerItem?
+    var isEditMode: Bool = true
     
     var body: some View {
-        PhotosPicker(selection: $selectedItem, matching: .images) {
+        Group {
+            if isEditMode {
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    avatarContent
+                }
+            } else {
+                avatarContent
+            }
+        }
+    }
+    
+    private var avatarContent: some View {
+        Group {
             ZStack(alignment: .bottomTrailing) {
                 // Avatar circular
                 if let image = avatarImage {
@@ -208,16 +252,18 @@ struct AvatarPickerView: View {
                         )
                 }
                 
-                // Botão de editar
-                Circle()
-                    .fill(Theme.primaryGreen)
-                    .frame(width: 28, height: 28)
-                    .overlay(
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
-                    )
-                    .offset(x: 4, y: 4)
+                // Botão de editar (apenas em modo edição)
+                if isEditMode {
+                    Circle()
+                        .fill(Theme.primaryGreen)
+                        .frame(width: 28, height: 28)
+                        .overlay(
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                        )
+                        .offset(x: 4, y: 4)
+                }
             }
         }
     }
@@ -230,9 +276,9 @@ struct FormFieldView: View {
     let placeholder: String
     @Binding var text: String
     var isKeyboardFocused: FocusState<Bool>.Binding?
-    var isReadOnly: Bool = false
     var keyboardType: UIKeyboardType = .default
     var autocapitalization: TextInputAutocapitalization = .words
+    var isReadOnly: Bool = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.spacing8) {

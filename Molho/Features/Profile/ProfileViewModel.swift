@@ -22,6 +22,10 @@ final class ProfileViewModel: ObservableObject {
     @Published var saveError: String?
     @Published var saveSuccess: Bool = false
     
+    // Estado de edição
+    @Published var isEditMode: Bool = true
+    @Published var hasProfileData: Bool = false
+    
     // Repositórios e serviços
     #if canImport(FirebaseFirestore)
     private let userRepository = FirebaseUserRepository()
@@ -33,9 +37,62 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Inicialização
     
     init() {
-        // Gerar um ID temporário para novos usuários
-        // Em um app real, isso viria do Firebase Auth
-        self.userId = UUID().uuidString
+        Task {
+            await loadCurrentUserProfile()
+        }
+    }
+    
+    // MARK: - Carregar perfil do usuário autenticado
+    
+    func loadCurrentUserProfile() async {
+        isLoading = true
+        
+        #if canImport(FirebaseAuth)
+        // Obter usuário atual do Firebase Auth
+        if let currentUser = AuthenticationManager.shared.user {
+            self.userId = currentUser.uid
+            
+            // Tentar carregar dados do Firestore
+            #if canImport(FirebaseFirestore)
+            do {
+                if let user = try await userRepository.getUser(id: currentUser.uid) {
+                    self.name = user.name
+                    self.email = user.email
+                    self.phone = user.phone
+                    self.avatarUrl = user.avatarUrl
+                    
+                    // Se houver avatar URL, carregar a imagem
+                    if let urlString = user.avatarUrl, let url = URL(string: urlString) {
+                        await loadAvatarFromURL(url)
+                    }
+                    
+                    hasProfileData = true
+                    isEditMode = false // Dados já salvos, modo visualização
+                } else {
+                    // Novo usuário, usar dados do Firebase Auth
+                    self.name = currentUser.displayName ?? ""
+                    self.email = currentUser.email ?? ""
+                    hasProfileData = false
+                    isEditMode = true // Novo usuário, modo edição
+                }
+            } catch {
+                print("❌ Erro ao carregar perfil: \(error)")
+                // Usar dados do Firebase Auth
+                self.name = currentUser.displayName ?? ""
+                self.email = currentUser.email ?? ""
+                hasProfileData = false
+                isEditMode = true
+            }
+            #else
+            self.name = currentUser.displayName ?? ""
+            self.email = currentUser.email ?? ""
+            hasProfileData = false
+            isEditMode = true
+            #endif
+        }
+        #endif
+        
+        isLoading = false
     }
     
     // MARK: - Validação
@@ -188,6 +245,8 @@ final class ProfileViewModel: ObservableObject {
             
             isSaving = false
             saveSuccess = true
+            hasProfileData = true
+            isEditMode = false // Desabilitar edição após salvar
             
             return true
             
@@ -209,6 +268,18 @@ final class ProfileViewModel: ObservableObject {
     func clearAvatar() {
         avatarImage = nil
         selectedAvatarItem = nil
+    }
+    
+    // MARK: - Habilitar Edição
+    
+    func enableEditMode() {
+        isEditMode = true
+    }
+    
+    func cancelEdit() {
+        Task {
+            await loadCurrentUserProfile()
+        }
     }
 }
 
