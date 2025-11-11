@@ -9,6 +9,7 @@ struct HomeView: View {
     )
     @State private var selectedMerchant: Merchant?
     @State private var showingAddMerchant = false
+    @State private var showingProfile = false
 
     @StateObject private var viewModel = HomeViewModel()
 
@@ -28,9 +29,6 @@ struct HomeView: View {
                 }
             } else if selectedTab == .search {
                 SearchView()
-            } else {
-                VStack { Spacer() }
-                    .background(Color(.systemGroupedBackground))
             }
         }
         .safeAreaInset(edge: .top) {
@@ -43,7 +41,11 @@ struct HomeView: View {
         }
         .safeAreaInset(edge: .bottom) {
             BottomBar(selected: selectedTab) { tab in
-                selectedTab = tab
+                if tab == .profile {
+                    showingProfile = true
+                } else {
+                    selectedTab = tab
+                }
             }
         }
         .sheet(item: $selectedMerchant) { merchant in
@@ -56,6 +58,14 @@ struct HomeView: View {
             viewModel.loadNearby()
         } content: {
             AddMerchantView()
+        }
+        .fullScreenCover(isPresented: $showingProfile) {
+            ProfileView()
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .trailing)
+                ))
+                .animation(.easeInOut(duration: 0.3), value: showingProfile)
         }
         .onChange(of: viewModel.merchants, initial: false) { oldValue, newValue in
             // Se há novos merchants, centralizar no mais recente
