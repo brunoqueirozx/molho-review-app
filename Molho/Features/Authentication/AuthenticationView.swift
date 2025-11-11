@@ -1,12 +1,9 @@
 import SwiftUI
-import AuthenticationServices
 
 struct AuthenticationView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @State private var showSignUp = false
     @State private var showLogin = false
-    @State private var showError = false
-    @State private var errorMessage = ""
     
     var body: some View {
         NavigationStack {
@@ -41,21 +38,6 @@ struct AuthenticationView: View {
                     
                     // Botões de autenticação
                     VStack(spacing: 16) {
-                        // Sign in with Apple
-                        SignInWithAppleButton(
-                            onRequest: { request in
-                                authManager.prepareAppleSignInRequest(request)
-                            },
-                            onCompletion: { result in
-                                Task {
-                                    await handleAppleSignIn(result: result)
-                                }
-                            }
-                        )
-                        .signInWithAppleButtonStyle(.white)
-                        .frame(height: 50)
-                        .cornerRadius(12)
-                        
                         // Sign in with Google
                         Button(action: {
                             Task {
@@ -118,57 +100,6 @@ struct AuthenticationView: View {
             }
             .navigationDestination(isPresented: $showLogin) {
                 LoginView()
-            }
-            .alert("Erro no Login", isPresented: $showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-        }
-    }
-    
-    private func handleAppleSignIn(result: Result<ASAuthorization, Error>) async {
-        switch result {
-        case .success(let authorization):
-            do {
-                print("🍎 Iniciando login com Apple...")
-                try await authManager.signInWithApple(authorization: authorization)
-                print("🍎 ✅ Login com Apple bem-sucedido!")
-            } catch {
-                await MainActor.run {
-                    print("🍎 ❌ Erro no login com Apple: \(error.localizedDescription)")
-                    errorMessage = authManager.errorMessage ?? "Erro ao fazer login com Apple: \(error.localizedDescription)"
-                    showError = true
-                }
-            }
-        case .failure(let error):
-            await MainActor.run {
-                // Se o usuário cancelou, não mostrar erro
-                let nsError = error as NSError
-                if nsError.domain == "com.apple.AuthenticationServices.AuthorizationError" {
-                    if nsError.code == 1001 {
-                        print("🍎 Login com Apple cancelado pelo usuário")
-                        return
-                    } else if nsError.code == 1000 {
-                        print("🍎 ❌ Erro 1000: Sign in with Apple não configurado!")
-                        errorMessage = """
-                        ⚠️ Sign in with Apple não está configurado.
-                        
-                        Para corrigir:
-                        1. No Xcode, selecione o target "Molho"
-                        2. Vá em "Signing & Capabilities"
-                        3. Clique em "+ Capability"
-                        4. Adicione "Sign in with Apple"
-                        5. Rebuild o projeto
-                        """
-                        showError = true
-                        return
-                    }
-                }
-                
-                print("🍎 ❌ Falha na autorização com Apple: \(error.localizedDescription)")
-                errorMessage = "Erro ao fazer login com Apple: \(error.localizedDescription)"
-                showError = true
             }
         }
     }
