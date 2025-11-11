@@ -145,9 +145,25 @@ struct AuthenticationView: View {
             await MainActor.run {
                 // Se o usuário cancelou, não mostrar erro
                 let nsError = error as NSError
-                if nsError.domain == "com.apple.AuthenticationServices.AuthorizationError" && nsError.code == 1001 {
-                    print("🍎 Login com Apple cancelado pelo usuário")
-                    return
+                if nsError.domain == "com.apple.AuthenticationServices.AuthorizationError" {
+                    if nsError.code == 1001 {
+                        print("🍎 Login com Apple cancelado pelo usuário")
+                        return
+                    } else if nsError.code == 1000 {
+                        print("🍎 ❌ Erro 1000: Sign in with Apple não configurado!")
+                        errorMessage = """
+                        ⚠️ Sign in with Apple não está configurado.
+                        
+                        Para corrigir:
+                        1. No Xcode, selecione o target "Molho"
+                        2. Vá em "Signing & Capabilities"
+                        3. Clique em "+ Capability"
+                        4. Adicione "Sign in with Apple"
+                        5. Rebuild o projeto
+                        """
+                        showError = true
+                        return
+                    }
                 }
                 
                 print("🍎 ❌ Falha na autorização com Apple: \(error.localizedDescription)")

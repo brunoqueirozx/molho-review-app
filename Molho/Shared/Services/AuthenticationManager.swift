@@ -306,6 +306,7 @@ enum AuthError: LocalizedError {
     case invalidToken
     case invalidCredential
     case noCurrentUser
+    case appleSignInNotConfigured
     
     var errorDescription: String? {
         switch self {
@@ -319,6 +320,8 @@ enum AuthError: LocalizedError {
             return "Credenciais inválidas"
         case .noCurrentUser:
             return "Nenhum usuário autenticado"
+        case .appleSignInNotConfigured:
+            return "Sign in with Apple não está configurado. Adicione a capability no Xcode em: Target → Signing & Capabilities → + Capability → Sign in with Apple"
         }
     }
 }
