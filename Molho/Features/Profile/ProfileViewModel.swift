@@ -3,6 +3,10 @@ import SwiftUI
 import PhotosUI
 import Combine
 
+#if canImport(FirebaseAuth)
+import FirebaseAuth
+#endif
+
 @MainActor
 final class ProfileViewModel: ObservableObject {
     // Campos do usuário
