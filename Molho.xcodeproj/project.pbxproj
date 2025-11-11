@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F23A4EC02EC2C4E700363ED3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = F23A4EBF2EC2C4E700363ED3 /* FirebaseAuth */; };
+		F23A4EC32EC2C57C00363ED3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F23A4EC22EC2C57C00363ED3 /* GoogleSignIn */; };
+		F23A4EC52EC2C57C00363ED3 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F23A4EC42EC2C57C00363ED3 /* GoogleSignInSwift */; };
 		F2471EAD2EBCDD4800248DED /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F2471EAC2EBCDD4800248DED /* FirebaseCore */; };
 		F2471EB32EBCDD4800248DED /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = F2471EB22EBCDD4800248DED /* FirebaseFirestore */; };
 		F2471EB52EBCDD4800248DED /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = F2471EB42EBCDD4800248DED /* FirebaseStorage */; };
@@ -39,13 +42,23 @@
 		F24742092EBE1C4800248DED /* Exceptions for "Molho" folder in "Molho" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CORRECAO_MARGINS_TEXTOS.md,
 				Features/AddMerchant/IMPLEMENTACAO.md,
 				Features/AddMerchant/README.md,
+				Features/Authentication/CONFIG_ESPECIFICA_MOLHO.md,
+				Features/Authentication/IMPLEMENTACAO_COMPLETA.md,
+				Features/Authentication/INFO_PLIST_CONFIG.md,
+				Features/Authentication/QUICK_START.md,
+				Features/Authentication/README.md,
+				Features/Profile/README.md,
+				Features/Profile/USAGE_EXAMPLE.md,
 				Info.plist,
+				MARGINS_MERCHANT_SHEET.md,
 				README.md,
 				REMOVER_README_DO_TARGET.md,
 				Shared/Repositories/FIREBASE_STORAGE_CONFIG.md,
 				Shared/Repositories/README.md,
+				TECLADO_TOOLBAR.md,
 			);
 			target = F2471E6B2EBCD42E00248DED /* Molho */;
 		};
@@ -77,9 +90,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F23A4EC32EC2C57C00363ED3 /* GoogleSignIn in Frameworks */,
 				F2471EAD2EBCDD4800248DED /* FirebaseCore in Frameworks */,
 				F2471EB32EBCDD4800248DED /* FirebaseFirestore in Frameworks */,
+				F23A4EC52EC2C57C00363ED3 /* GoogleSignInSwift in Frameworks */,
 				F2471EB52EBCDD4800248DED /* FirebaseStorage in Frameworks */,
+				F23A4EC02EC2C4E700363ED3 /* FirebaseAuth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -143,6 +159,9 @@
 				F2471EAC2EBCDD4800248DED /* FirebaseCore */,
 				F2471EB22EBCDD4800248DED /* FirebaseFirestore */,
 				F2471EB42EBCDD4800248DED /* FirebaseStorage */,
+				F23A4EBF2EC2C4E700363ED3 /* FirebaseAuth */,
+				F23A4EC22EC2C57C00363ED3 /* GoogleSignIn */,
+				F23A4EC42EC2C57C00363ED3 /* GoogleSignInSwift */,
 			);
 			productName = Molho;
 			productReference = F2471E6C2EBCD42E00248DED /* Molho.app */;
@@ -228,6 +247,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F2471E9D2EBCDD4800248DED /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				F23A4EC12EC2C57C00363ED3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2471E6D2EBCD42E00248DED /* Products */;
@@ -465,6 +485,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = Molho/MolhoRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 722B3C2978;
@@ -618,6 +639,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F23A4EC12EC2C57C00363ED3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 		F2471E9D2EBCDD4800248DED /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -629,6 +658,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F23A4EBF2EC2C4E700363ED3 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2471E9D2EBCDD4800248DED /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		F23A4EC22EC2C57C00363ED3 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F23A4EC12EC2C57C00363ED3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		F23A4EC42EC2C57C00363ED3 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F23A4EC12EC2C57C00363ED3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
 		F2471EAC2EBCDD4800248DED /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F2471E9D2EBCDD4800248DED /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

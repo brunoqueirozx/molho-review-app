@@ -137,6 +137,32 @@ struct ProfileView: View {
                                 }
                                 .disabled(!viewModel.isFormValid || viewModel.isSaving)
                                 .padding(.horizontal, Theme.spacing16)
+                                
+                                // MARK: - Botão Logout
+                                Button(action: {
+                                    Task {
+                                        do {
+                                            try AuthenticationManager.shared.signOut()
+                                            dismiss()
+                                        } catch {
+                                            print("Erro ao fazer logout: \(error)")
+                                        }
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                                            .font(.system(size: 17))
+                                        
+                                        Text("Sair da Conta")
+                                            .font(.system(size: 17, weight: .semibold))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, Theme.spacing16)
+                                    .background(Color.red.opacity(0.1))
+                                    .foregroundColor(.red)
+                                    .cornerRadius(Theme.corner12)
+                                }
+                                .padding(.horizontal, Theme.spacing16)
                             }
                             .padding(.bottom, Theme.spacing24)
                         }

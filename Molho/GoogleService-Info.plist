@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>623650863313-ga2pmfrulinfvv5bji3oa8ino5arale5.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.623650863313-ga2pmfrulinfvv5bji3oa8ino5arale5</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCdRkm2oP0-WYrT46cECWu21w6m603jSjk</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.brunoqueiroz.molho</string>
+	<string>molho.review.Molho</string>
 	<key>PROJECT_ID</key>
 	<string>molho-review-app</string>
 	<key>STORAGE_BUCKET</key>
