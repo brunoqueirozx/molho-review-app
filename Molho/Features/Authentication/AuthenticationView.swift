@@ -21,19 +21,6 @@ struct AuthenticationView: View {
                         .scaledToFit()
                         .frame(width: 150, height: 150)
                     
-                    // Título
-                    VStack(spacing: 8) {
-                        Text("Bem-vindo ao Molho")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("Encontre os melhores estabelecimentos")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 32)
-                    
                     Spacer()
                     
                     // Botões de autenticação
