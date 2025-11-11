@@ -30,6 +30,9 @@ final class ProfileViewModel: ObservableObject {
     @Published var isEditMode: Bool = true
     @Published var hasProfileData: Bool = false
     
+    // Controle de nova imagem
+    private var hasNewAvatarImage: Bool = false
+    
     // Repositórios e serviços
     #if canImport(FirebaseFirestore)
     private let userRepository = FirebaseUserRepository()
@@ -139,6 +142,8 @@ final class ProfileViewModel: ObservableObject {
             if let data = try await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
                 avatarImage = image
+                hasNewAvatarImage = true // Marca que há uma nova imagem
+                print("📸 Nova imagem de avatar selecionada")
             }
         } catch {
             print("❌ Erro ao carregar imagem do avatar: \(error)")
@@ -179,6 +184,7 @@ final class ProfileViewModel: ObservableObject {
             print("🔄 Carregando avatar do Storage: \(gsURL)")
             let image = try await storageService.downloadImage(from: gsURL)
             avatarImage = image
+            hasNewAvatarImage = false // Não é uma nova imagem, é uma existente
             print("✅ Avatar carregado com sucesso!")
         } catch {
             print("❌ Erro ao carregar imagem do avatar: \(error.localizedDescription)")
@@ -202,8 +208,8 @@ final class ProfileViewModel: ObservableObject {
             // 1. Se houver uma nova imagem de avatar, fazer upload
             var newAvatarUrl = avatarUrl
             
-            if let avatarImg = avatarImage {
-                print("🔄 Fazendo upload do avatar...")
+            if hasNewAvatarImage, let avatarImg = avatarImage {
+                print("🔄 Fazendo upload do novo avatar...")
                 
                 // Deletar avatar antigo se existir
                 if let oldUrl = avatarUrl, !oldUrl.isEmpty {
@@ -218,6 +224,13 @@ final class ProfileViewModel: ObservableObject {
                 // Upload do novo avatar
                 newAvatarUrl = try await storageService.uploadAvatar(avatarImg, userId: userId)
                 print("✅ Avatar uploaded: \(newAvatarUrl ?? "nil")")
+                hasNewAvatarImage = false // Resetar flag
+            } else if avatarImage == nil {
+                // Se não há imagem, limpar a URL
+                newAvatarUrl = nil
+                print("ℹ️ Nenhuma imagem de avatar")
+            } else {
+                print("ℹ️ Usando avatar existente: \(avatarUrl ?? "nenhum")")
             }
             
             // 2. Criar ou atualizar usuário
@@ -232,6 +245,12 @@ final class ProfileViewModel: ObservableObject {
             )
             
             print("🔄 Salvando perfil no Firestore...")
+            print("📄 Dados a serem salvos:")
+            print("   - ID: \(user.id)")
+            print("   - Nome: \(user.name)")
+            print("   - Email: \(user.email)")
+            print("   - Telefone: \(user.phone)")
+            print("   - Avatar URL: \(user.avatarUrl ?? "nenhum")")
             
             // Verificar se o usuário já existe
             let existingUser = try await userRepository.getUser(id: userId)
@@ -280,9 +299,11 @@ final class ProfileViewModel: ObservableObject {
     
     func enableEditMode() {
         isEditMode = true
+        hasNewAvatarImage = false // Resetar flag ao entrar em modo edição
     }
     
     func cancelEdit() {
+        hasNewAvatarImage = false // Resetar flag ao cancelar
         Task {
             await loadCurrentUserProfile()
         }
