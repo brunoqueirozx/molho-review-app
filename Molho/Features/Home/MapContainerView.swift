@@ -4,6 +4,7 @@ import MapKit
 struct MapContainerView: View {
     @Binding var region: MKCoordinateRegion
     var merchants: [Merchant]
+    var userLocation: CLLocation?
     var onMerchantSelected: (Merchant) -> Void
 
     var body: some View {
@@ -11,6 +12,7 @@ struct MapContainerView: View {
             ModernMapView(
                 region: $region,
                 merchants: merchants,
+                userLocation: userLocation,
                 onMerchantSelected: onMerchantSelected
             )
             .ignoresSafeArea(edges: .bottom)
@@ -18,7 +20,7 @@ struct MapContainerView: View {
             Map(
                 coordinateRegion: $region,
                 interactionModes: .all,
-                showsUserLocation: false,
+                showsUserLocation: true,
                 annotationItems: merchants.filter { $0.hasValidCoordinates }
             ) { merchant in
                 MapAnnotation(coordinate: merchant.coordinate, anchorPoint: CGPoint(x: 0.5, y: 1)) {
@@ -40,6 +42,7 @@ struct MapContainerView: View {
 private struct ModernMapView: View {
     @Binding var region: MKCoordinateRegion
     var merchants: [Merchant]
+    var userLocation: CLLocation?
     var onMerchantSelected: (Merchant) -> Void
 
     var body: some View {
@@ -54,6 +57,21 @@ private struct ModernMapView: View {
             ),
             interactionModes: .all
         ) {
+            // Localização do usuário
+            if let userLocation = userLocation {
+                Annotation("", coordinate: userLocation.coordinate) {
+                    Circle()
+                        .fill(Color.blue)
+                        .frame(width: 16, height: 16)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 3)
+                        )
+                        .shadow(radius: 2)
+                }
+            }
+            
+            // Merchants
             ForEach(merchants.filter { $0.hasValidCoordinates }) { merchant in
                 Annotation("", coordinate: merchant.coordinate, anchor: .bottom) {
                     Button {
