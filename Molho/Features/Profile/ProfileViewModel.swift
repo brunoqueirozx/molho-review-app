@@ -68,9 +68,12 @@ final class ProfileViewModel: ObservableObject {
                     self.phone = user.phone
                     self.avatarUrl = user.avatarUrl
                     
-                    // Se houver avatar URL, carregar a imagem
+                    // Se houver avatar URL no Firestore, carregar a imagem
                     if let urlString = user.avatarUrl, !urlString.isEmpty {
                         await loadAvatarFromStorage(urlString)
+                    } else if let authPhotoURL = currentUser.photoURL {
+                        // Se não houver avatar no Firestore, mas houver no Firebase Auth
+                        await loadAvatarFromURL(authPhotoURL)
                     }
                     
                     hasProfileData = true
@@ -79,6 +82,12 @@ final class ProfileViewModel: ObservableObject {
                     // Novo usuário, usar dados do Firebase Auth
                     self.name = currentUser.displayName ?? ""
                     self.email = currentUser.email ?? ""
+                    
+                    // Carregar foto do Firebase Auth se disponível
+                    if let authPhotoURL = currentUser.photoURL {
+                        await loadAvatarFromURL(authPhotoURL)
+                    }
+                    
                     hasProfileData = false
                     isEditMode = true // Novo usuário, modo edição
                 }
@@ -87,12 +96,24 @@ final class ProfileViewModel: ObservableObject {
                 // Usar dados do Firebase Auth
                 self.name = currentUser.displayName ?? ""
                 self.email = currentUser.email ?? ""
+                
+                // Carregar foto do Firebase Auth se disponível
+                if let authPhotoURL = currentUser.photoURL {
+                    await loadAvatarFromURL(authPhotoURL)
+                }
+                
                 hasProfileData = false
                 isEditMode = true
             }
             #else
             self.name = currentUser.displayName ?? ""
             self.email = currentUser.email ?? ""
+            
+            // Carregar foto do Firebase Auth se disponível
+            if let authPhotoURL = currentUser.photoURL {
+                await loadAvatarFromURL(authPhotoURL)
+            }
+            
             hasProfileData = false
             isEditMode = true
             #endif
@@ -164,9 +185,17 @@ final class ProfileViewModel: ObservableObject {
                 self.phone = user.phone
                 self.avatarUrl = user.avatarUrl
                 
-                // Se houver avatar URL, carregar a imagem
+                // Se houver avatar URL no Firestore, carregar a imagem
                 if let urlString = user.avatarUrl, !urlString.isEmpty {
                     await loadAvatarFromStorage(urlString)
+                } else {
+                    // Se não houver no Firestore, tentar carregar do Firebase Auth
+                    #if canImport(FirebaseAuth)
+                    if let currentUser = AuthenticationManager.shared.user,
+                       let authPhotoURL = currentUser.photoURL {
+                        await loadAvatarFromURL(authPhotoURL)
+                    }
+                    #endif
                 }
             }
         } catch {
@@ -190,6 +219,21 @@ final class ProfileViewModel: ObservableObject {
             print("❌ Erro ao carregar imagem do avatar: \(error.localizedDescription)")
         }
         #endif
+    }
+    
+    private func loadAvatarFromURL(_ url: URL) async {
+        do {
+            print("🔄 Carregando avatar do Firebase Auth: \(url.absoluteString)")
+            let (data, _) = try await URLSession.shared.data(from: url)
+            
+            if let image = UIImage(data: data) {
+                avatarImage = image
+                hasNewAvatarImage = false // Não é uma nova imagem, é uma existente
+                print("✅ Avatar do Firebase Auth carregado com sucesso!")
+            }
+        } catch {
+            print("❌ Erro ao carregar imagem do Firebase Auth: \(error.localizedDescription)")
+        }
     }
     
     // MARK: - Salvar Perfil

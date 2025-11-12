@@ -26,6 +26,10 @@ struct MerchantSheetView: View {
     @State private var selectedTab: MerchantTab = .about
     @State private var showAddReview: Bool = false
     @State private var showReviewsList: Bool = false
+    @State private var reviews: [Review] = []
+    @State private var isLoadingReviews: Bool = false
+    
+    private let reviewRepository = FirebaseReviewRepository()
     
     init(merchant: Merchant) {
         self.merchant = merchant
@@ -290,6 +294,47 @@ struct MerchantSheetView: View {
                                 .fill(Color.gray.opacity(0.2))
                                 .frame(height: 1)
                             
+                            // Seção Avaliações
+                            if !reviews.isEmpty {
+                                VStack(alignment: .leading, spacing: Theme.spacing16) {
+                                    // Header com título e botão ver mais
+                                    HStack {
+                                        Text("Avaliações")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundStyle(Color.black.opacity(0.8))
+                                            .tracking(-0.45)
+                                        
+                                        Spacer()
+                                        
+                                        if reviews.count > 5 {
+                                            Button(action: {
+                                                showReviewsList = true
+                                            }) {
+                                                Text("Ver mais")
+                                                    .font(.system(size: 15))
+                                                    .foregroundStyle(Theme.primaryGreen)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    
+                                    // Scroll horizontal de cards
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            ForEach(Array(reviews.prefix(5))) { review in
+                                                ReviewCardView(review: review)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, Theme.spacing16)
+                                
+                                // Divider
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(height: 1)
+                            }
+                            
                             // Grade de fotos
                             if let galleryImages = viewModel.merchant.galleryImages, !galleryImages.isEmpty {
                                 let _ = print("🎨 MerchantSheetView: Renderizando galeria com \(galleryImages.count) imagens")
@@ -463,6 +508,9 @@ struct MerchantSheetView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
+        .task {
+            await loadReviews()
+        }
         .sheet(isPresented: $showAddReview) {
             AddReviewView(merchant: merchant)
                 .environmentObject(authManager)
@@ -470,6 +518,19 @@ struct MerchantSheetView: View {
         .sheet(isPresented: $showReviewsList) {
             ReviewsListView(merchant: merchant)
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func loadReviews() async {
+        isLoadingReviews = true
+        do {
+            reviews = try await reviewRepository.fetchReviews(for: merchant.id)
+            print("✅ \(reviews.count) avaliações carregadas para \(merchant.name)")
+        } catch {
+            print("❌ Erro ao carregar avaliações: \(error.localizedDescription)")
+        }
+        isLoadingReviews = false
     }
 }
 
@@ -517,5 +578,87 @@ struct MerchantTabChip: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: Theme.corner100))
         }
+    }
+}
+
+struct ReviewCardView: View {
+    let review: Review
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Estrelas
+                HStack(spacing: 4) {
+                    ForEach(0..<5) { index in
+                        Image(systemName: index < review.rating ? "star.fill" : "star")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "#FFD700"))
+                    }
+                }
+                
+                // Comentário (limitado a 380 caracteres)
+                if let comment = review.comment {
+                    Text(truncateText(comment, maxLength: 380))
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(hex: "#3d3d3d"))
+                        .lineLimit(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                Spacer()
+                
+                // Nome do usuário
+                Text(review.userName)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(hex: "#1f1f1f"))
+            }
+            .padding(16)
+            .frame(width: 280, height: 180)
+            .background(Color(hex: "#E5E5E2"))
+            .cornerRadius(12)
+            
+            // Avatar do usuário (canto superior direito)
+            VStack {
+                if let avatarUrl = review.userAvatarUrl, let url = URL(string: avatarUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                        default:
+                            Circle()
+                                .fill(Theme.primaryGreen.opacity(0.2))
+                                .frame(width: 40, height: 40)
+                                .overlay(
+                                    Text(String(review.userName.prefix(1)).uppercased())
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(Theme.primaryGreen)
+                                )
+                        }
+                    }
+                } else {
+                    Circle()
+                        .fill(Theme.primaryGreen.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Text(String(review.userName.prefix(1)).uppercased())
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(Theme.primaryGreen)
+                        )
+                }
+            }
+            .padding(12)
+        }
+    }
+    
+    private func truncateText(_ text: String, maxLength: Int) -> String {
+        if text.count > maxLength {
+            let index = text.index(text.startIndex, offsetBy: maxLength)
+            return String(text[..<index]) + "..."
+        }
+        return text
     }
 }

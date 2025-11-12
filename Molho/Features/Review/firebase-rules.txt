@@ -12,12 +12,14 @@ service cloud.firestore {
       // Rating deve estar entre 1 e 5
       allow create: if request.auth != null 
                     && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.rating is int
                     && request.resource.data.rating >= 1
                     && request.resource.data.rating <= 5;
       
       // Apenas o dono da avaliação pode atualizar
       allow update: if request.auth != null 
                     && resource.data.userId == request.auth.uid
+                    && request.resource.data.rating is int
                     && request.resource.data.rating >= 1
                     && request.resource.data.rating <= 5;
       
@@ -31,8 +33,10 @@ service cloud.firestore {
       // Qualquer pessoa pode ler
       allow read: if true;
       
-      // Apenas usuários autenticados podem atualizar (para métricas)
+      // Apenas usuários autenticados podem criar, atualizar ou deletar
+      allow create: if request.auth != null;
       allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
   }
 }
