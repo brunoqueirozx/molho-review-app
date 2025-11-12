@@ -6,6 +6,7 @@ struct SearchView: View {
     @FocusState private var isSearchFocused: Bool
     @State private var showMerchantSheet: Bool = false
     @State private var selectedMerchant: Merchant?
+    @EnvironmentObject var authManager: AuthenticationManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -177,6 +178,7 @@ struct SearchView: View {
             Group {
                 if let merchant = selectedMerchant {
                     MerchantSheetView(merchant: merchant)
+                        .environmentObject(authManager)
                         .presentationDetents([.medium, .large])
                         .presentationDragIndicator(.visible)
                         .transition(.move(edge: .bottom).combined(with: .opacity))

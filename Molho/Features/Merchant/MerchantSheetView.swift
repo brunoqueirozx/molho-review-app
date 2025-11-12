@@ -22,7 +22,10 @@ struct MerchantSheetView: View {
     let merchant: Merchant
     @StateObject private var viewModel: MerchantViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var selectedTab: MerchantTab = .about
+    @State private var showAddReview: Bool = false
+    @State private var showReviewsList: Bool = false
     
     init(merchant: Merchant) {
         self.merchant = merchant
@@ -40,7 +43,7 @@ struct MerchantSheetView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .top) {
+            ZStack(alignment: .topTrailing) {
                 // Imagem de header com gradiente (fundo fixo)
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
@@ -90,74 +93,54 @@ struct MerchantSheetView: View {
                                 endPoint: .bottom
                             )
                         )
-                        
-                        // Header com botões (sobreposto com backdrop blur)
-                        VStack {
-                            HStack {
-                                // Botão voltar
-                                Button(action: {
-                                    print("🔙 Botão voltar clicado - fechando sheet")
-                                    dismiss()
-                                }) {
-                                    Image(systemName: "arrow.left")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(.black)
-                                        .frame(width: 40, height: 40)
-                                        .background(.white)
-                                        .clipShape(Circle())
-                                }
-                                .buttonStyle(.plain)
-                                
-                                Spacer()
-                                
-                                // Botões de ação
-                                HStack(spacing: 8) {
-                                    Button(action: { print("⭐ Star tapped") }) {
-                                        Image(systemName: "star")
-                                            .font(.system(size: 20))
-                                            .foregroundStyle(.black)
-                                            .frame(width: 40, height: 40)
-                                            .background(.white)
-                                            .clipShape(Circle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    
-                                    Button(action: { print("❤️ Heart tapped") }) {
-                                        Image(systemName: "heart")
-                                            .font(.system(size: 20))
-                                            .foregroundStyle(.black)
-                                            .frame(width: 40, height: 40)
-                                            .background(.white)
-                                            .clipShape(Circle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    
-                                    Button(action: { print("🔖 Bookmark tapped") }) {
-                                        Image(systemName: "bookmark")
-                                            .font(.system(size: 20))
-                                            .foregroundStyle(.black)
-                                            .frame(width: 40, height: 40)
-                                            .background(.white)
-                                            .clipShape(Circle())
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.horizontal, Theme.spacing16)
-                            .padding(.top, 24)
-                            .padding(.bottom, 8)
-                            
-                            Spacer()
-                        }
-                        .background(.ultraThinMaterial.opacity(0.1))
-                        .allowsHitTesting(true)
-                        .zIndex(10)
                     }
                     .frame(height: 320)
                     .zIndex(10)
                     
                     Spacer()
                 }
+                
+                // Botões flutuantes (cantos superiores)
+                VStack {
+                    HStack {
+                        // Botão de fechar (canto superior esquerdo)
+                        Button(action: {
+                            print("❌ Botão de fechar clicado - fechando sheet")
+                            dismiss()
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.black)
+                                .frame(width: 56, height: 56)
+                                .background(.white)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Spacer()
+                        
+                        // Botão de avaliação (canto superior direito)
+                        Button(action: {
+                            print("⭐ Botão de avaliação clicado - abrindo AddReviewView")
+                            showAddReview = true
+                        }) {
+                            Image(systemName: "star")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.black)
+                                .frame(width: 56, height: 56)
+                                .background(.white)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(16)
+                .allowsHitTesting(true)
+                .zIndex(100)
                 
                 // Conteúdo scrollável (sobreposto)
                 ScrollView {
@@ -205,7 +188,15 @@ struct MerchantSheetView: View {
                                 // Métricas (ícones pretos conforme Figma)
                                 HStack(spacing: Theme.spacing16) {
                                     MetricItem(icon: "star.fill", value: String(format: "%.1f", viewModel.merchant.rating ?? 0.0))
-                                    MetricItem(icon: "bubble.left", value: String(format: "%.1f", viewModel.merchant.reviewsCount ?? 0.0))
+                                    
+                                    Button(action: {
+                                        print("📝 Ver todas as avaliações")
+                                        showReviewsList = true
+                                    }) {
+                                        MetricItem(icon: "bubble.left", value: String(format: "%.0f", viewModel.merchant.reviewsCount ?? 0.0))
+                                    }
+                                    .buttonStyle(.plain)
+                                    
                                     MetricItem(icon: "eye", value: "\(viewModel.merchant.viewsCount ?? 0)")
                                     MetricItem(icon: "bookmark", value: "\(viewModel.merchant.bookmarksCount ?? 0)")
                                 }
@@ -472,6 +463,13 @@ struct MerchantSheetView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
+        .sheet(isPresented: $showAddReview) {
+            AddReviewView(merchant: merchant)
+                .environmentObject(authManager)
+        }
+        .sheet(isPresented: $showReviewsList) {
+            ReviewsListView(merchant: merchant)
+        }
     }
 }
 

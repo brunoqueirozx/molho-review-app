@@ -13,6 +13,7 @@ struct HomeView: View {
 
     @StateObject private var viewModel = HomeViewModel()
     @StateObject private var locationManager = LocationManager()
+    @EnvironmentObject var authManager: AuthenticationManager
 
     var body: some View {
         ZStack {
@@ -72,6 +73,7 @@ struct HomeView: View {
         }
         .sheet(item: $selectedMerchant) { merchant in
             MerchantSheetView(merchant: merchant)
+                .environmentObject(authManager)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }

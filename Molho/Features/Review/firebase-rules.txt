@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reviews - Avaliações dos usuários
+    match /reviews/{reviewId} {
+      // Qualquer pessoa pode ler avaliações
+      allow read: if true;
+      
+      // Apenas usuários autenticados podem criar avaliações
+      // E o userId deve ser o mesmo do usuário autenticado
+      // Rating deve estar entre 1 e 5
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.rating >= 1
+                    && request.resource.data.rating <= 5;
+      
+      // Apenas o dono da avaliação pode atualizar
+      allow update: if request.auth != null 
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.rating >= 1
+                    && request.resource.data.rating <= 5;
+      
+      // Apenas o dono da avaliação pode deletar
+      allow delete: if request.auth != null 
+                    && resource.data.userId == request.auth.uid;
+    }
+    
+    // Merchants - Estabelecimentos
+    match /merchants/{merchantId} {
+      // Qualquer pessoa pode ler
+      allow read: if true;
+      
+      // Apenas usuários autenticados podem atualizar (para métricas)
+      allow update: if request.auth != null;
+    }
+  }
+}
+

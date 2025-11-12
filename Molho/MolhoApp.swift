@@ -26,6 +26,7 @@ struct MolhoApp: App {
                     AuthenticationView()
                 }
             }
+            .environmentObject(authManager)
         }
     }
 }
