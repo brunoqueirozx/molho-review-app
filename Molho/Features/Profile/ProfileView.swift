@@ -3,7 +3,6 @@ import PhotosUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
-    @Environment(\.dismiss) private var dismiss
     @FocusState private var isKeyboardFocused: Bool
     
     var body: some View {
@@ -13,49 +12,6 @@ struct ProfileView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Barra de navegação customizada
-                HStack {
-                    if viewModel.isEditMode {
-                        Button(action: {
-                            if viewModel.hasProfileData {
-                                viewModel.cancelEdit()
-                            } else {
-                                dismiss()
-                            }
-                        }) {
-                            Text("Cancelar")
-                                .font(.system(size: 17))
-                                .foregroundColor(Theme.primaryGreen)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    if !viewModel.isEditMode {
-                        Button(action: {
-                            viewModel.enableEditMode()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 14))
-                                Text("Editar")
-                                    .font(.system(size: 17, weight: .semibold))
-                            }
-                            .foregroundColor(Theme.primaryGreen)
-                        }
-                    } else if viewModel.hasProfileData {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 17))
-                                .foregroundColor(Theme.primaryGreen)
-                        }
-                    }
-                }
-                .padding(.horizontal, Theme.spacing16)
-                .padding(.vertical, Theme.spacing12)
-                .background(Color(hex: "#FFF"))
                 
                 if viewModel.isLoading {
                     Spacer()
@@ -66,10 +22,36 @@ struct ProfileView: View {
                         VStack(spacing: Theme.spacing24) {
                             // MARK: - Header
                             VStack(spacing: Theme.spacing16) {
-                                Text("Perfil do Usuário")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(Theme.textPrimary)
-                                    .padding(.top, Theme.spacing24)
+                                HStack {
+                                    Text("Perfil do Usuário")
+                                        .font(.system(size: 28, weight: .bold))
+                                        .foregroundColor(Theme.textPrimary)
+                                    
+                                    Spacer()
+                                    
+                                    if !viewModel.isEditMode {
+                                        Button(action: {
+                                            viewModel.enableEditMode()
+                                        }) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "pencil")
+                                                    .font(.system(size: 14))
+                                                Text("Editar")
+                                                    .font(.system(size: 17, weight: .semibold))
+                                            }
+                                            .foregroundColor(Theme.primaryGreen)
+                                        }
+                                    } else if viewModel.hasProfileData {
+                                        Button(action: {
+                                            viewModel.cancelEdit()
+                                        }) {
+                                            Text("Cancelar")
+                                                .font(.system(size: 17))
+                                                .foregroundColor(Theme.primaryGreen)
+                                        }
+                                    }
+                                }
+                                .padding(.top, Theme.spacing24)
                                 
                                 // MARK: - Avatar
                                 AvatarPickerView(
@@ -174,7 +156,6 @@ struct ProfileView: View {
                                     Task {
                                         do {
                                             try AuthenticationManager.shared.signOut()
-                                            dismiss()
                                         } catch {
                                             print("Erro ao fazer logout: \(error)")
                                         }
