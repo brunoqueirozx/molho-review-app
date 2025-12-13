@@ -1,0 +1,151 @@
+# ===== GIT BACKUP =====
+.git_backup/
+
+# ===== ARQUIVOS SENSÍVEIS - SEGURANÇA =====
+# Firebase
+**/GoogleService-Info.plist
+**/GoogleService-Info.plist.template
+**/google-services.json
+**/serviceAccountKey*.json
+**/firebase-adminsdk*.json
+
+# Info.plist com credenciais
+Molho/Info.plist
+Molho/Info.plist.template
+
+# Credenciais e Secrets
+*.pem
+*.p8
+*.p12
+*.key
+*.keystore
+.env
+.env.*
+*.secret
+
+# ===== Xcode =====
+# Build generated
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+.build/
+
+# ===== CocoaPods =====
+Pods/
+!Podfile.lock
+
+# ===== Carthage =====
+Carthage/Build/
+Carthage/Checkouts/
+
+# ===== fastlane =====
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ===== Node.js (para scripts) =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ===== IDEs =====
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== SCRIPTS DE DESENVOLVIMENTO =====
+# Scripts de população de dados
+scripts/populate_firestore*.js
+scripts/PopulateFirestore.swift
+scripts/run.sh
+scripts/limpar_target.sh
+scripts/package.json
+scripts/.gitignore
+
+# ===== DOCUMENTAÇÃO DE DESENVOLVIMENTO (não necessária para o app funcionar) =====
+# Manter apenas: README.md (raiz único)
+
+# Documentação de implementação/desenvolvimento
+**/IMPLEMENTACAO*.md
+**/COMECE_AQUI*.md
+**/QUICK_START*.md
+**/SETUP_PASSO_A_PASSO*.md
+**/GUIA_*.md
+**/ARQUITETURA*.md
+**/INDEX.md
+**/USAGE_EXAMPLE*.md
+
+# Documentação de configuração/troubleshooting
+**/CONFIG_*.md
+**/INFO_PLIST_CONFIG*.md
+**/COMO_*.md
+**/VERIFICAR_*.md
+**/APPLE_SIGNIN_TROUBLESHOOTING*.md
+**/FIREBASE_SETUP*.md
+**/FIREBASE_STORAGE_CONFIG*.md
+**/FIREBASE_INTEGRATION*.md
+**/INDICES_FIREBASE*.md
+**/ATIVAR_*.md
+**/POPULATE_*.md
+**/EXECUTAR_*.md
+
+# Anotações e correções temporárias
+**/CORRECAO*.md
+**/CORRECOES*.md
+**/MARGINS_*.md
+**/REMOVER_*.md
+**/TECLADO_*.md
+ADICIONAR_*.md
+ATUALIZACAO_*.md
+FORMULARIO_*.md
+LOCALIZACAO_*.md
+MELHORIAS_*.md
+
+# READMEs de features (documentação interna)
+Molho/Features/**/README.md
+Molho/Shared/**/README.md
+Molho/README.md
+SEGURANCA.md
+scripts/README.md
+
+# Arquivos de regras (manter apenas no Firebase Console)
+**/firebase-rules.txt
+**/firestore_rules.txt
+
+# ===== Misc =====
+*.log
+*.tmp
+*.temp
+
